@@ -1,5 +1,19 @@
+html {
+  height: 100%;
+}
+
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+.appContainer {
+  height: 100%;
+}
+
 .App {
   text-align: center;
+  height: 100%;
 }
 
 .App-logo {
@@ -35,4 +49,32 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+.main-layout {
+  width: 1600px;
+  height: 1200px;
+  border-collapse: collapse;
+  
+  tr {
+    height: 600px;
+    td {
+      width: 800px;
+      height: 600px;
+      border: 1px solid gray;
+      overflow: hidden;
+    }
+  }
+}
+
+.three-container {
+  width: 100%;
+  height: 100%;
+}
+
+.side-drawing-container {
+  margin-left: auto;
+  margin-right: auto;
+  border: 3px solid black;
+  width: fit-content;
 }
