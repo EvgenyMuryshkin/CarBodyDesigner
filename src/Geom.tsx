@@ -1,5 +1,5 @@
 import { Float32BufferAttribute, BufferGeometry, Vector3, BufferAttribute } from "three";
-import { Generate, IPoint2D } from "./lib";
+import { Generate, IPoint2D, IPoint3D } from "./lib";
 
 export class Geom extends BufferGeometry {
     vertices: number[] = [];
@@ -19,11 +19,12 @@ export class Geom extends BufferGeometry {
 
     private create() {
         const { geometryScale, length, width, height } = this;
-        
+        const halfWidth = width / 2;
+
         for (const idx of Generate.range(0, length)) {
             this.vertices.push(
-                idx * geometryScale, 0, 0, 
-                idx * geometryScale, 0, 0
+                idx * geometryScale, 0, halfWidth, 
+                idx * geometryScale, 0, halfWidth
             );
             this.uvs.push(0.5, 0.5);
             this.normals.push(
@@ -60,12 +61,15 @@ export class Geom extends BufferGeometry {
     update(points: IPoint2D[]) {
         const { 
             length,
+            width,
             geometryScale,
             //vertices, 
             indices, 
             normals, 
             uvs 
         } = this;
+        const halfWidth = width / 2;
+
         //const indices = this.getIndex()?.array as number[];
         const position = this.attributes.position as BufferAttribute;
         const vertices = position.array as number[];
@@ -92,8 +96,8 @@ export class Geom extends BufferGeometry {
         }
 
         for (const idx of Generate.range(0, points.length)) {
-            setVertices(idx * geometryScale, points[idx].y * geometryScale, 0);
-            setVertices(idx * geometryScale, 0, 0);
+            setVertices(idx * geometryScale, points[idx].y * geometryScale, halfWidth);
+            setVertices(idx * geometryScale, 0, halfWidth);
         }
 /*
         const getVector = (index: number) => {

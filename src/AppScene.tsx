@@ -2,13 +2,8 @@ import React from "react"
 import * as THREE from 'three';
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { Geom } from "./Geom";
+import { BodyShape } from "./BodyShape";
 import { IPoint2D } from "./lib";
-
-class ProjectionPoint {
-    public x = 0;
-    public y = 0;
-    public z = 0;
-}
 
 // https://dustinpfister.github.io/2018/04/13/threejs-orbit-controls/
 // https://stackoverflow.com/questions/2368784/draw-on-html5-canvas-using-a-mouse
@@ -16,14 +11,16 @@ class ProjectionPoint {
 
 export interface IProps {
     length: number;
-    points: IPoint2D[];
+    sidePoints: IPoint2D[];
+    frontPoints: IPoint2D[];
+    topPoints: IPoint2D[];
 }
 
 export class AppScene extends React.Component<IProps> {
     scene: THREE.Scene | null = null;
     camera: THREE.PerspectiveCamera | null = null;
     renderer: THREE.WebGLRenderer | null = null;
-    bodyMesh: THREE.Mesh | null = null;
+    bodyMesh: THREE.Mesh[] | null = null;
     orbitControls: OrbitControls | null = null;
 
     container: HTMLDivElement | null = null;
@@ -46,17 +43,27 @@ export class AppScene extends React.Component<IProps> {
     }
 
     updateMesh() {
+        
         const { par, scene } = this;
 
         if (!scene || !par) return;
 
         if (this.bodyMesh)
-            this.scene?.remove(this.bodyMesh);
+            this.bodyMesh.forEach(m => this.scene?.remove(m));
 
+        /*
         par.update(this.props.points);
         const material = new THREE.MeshBasicMaterial( { color: 0xffff00, wireframe: true } );
         this.bodyMesh = new THREE.Mesh( par, material );
         scene.add( this.bodyMesh );
+        */
+
+        const body = new BodyShape(101, 41, 31);
+        const { sidePoints, frontPoints, topPoints } = this.props;
+        body.apply(sidePoints, frontPoints, topPoints );
+        const material = new THREE.MeshBasicMaterial( { color: 0xffff00, wireframe: true } );
+        this.bodyMesh = body.geometry.map(m => new THREE.Mesh( m, material ));
+        this.bodyMesh.forEach(m => scene.add( m ))
     }
 
     init()
