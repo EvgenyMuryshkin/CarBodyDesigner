@@ -78,63 +78,77 @@ export class BodyShape {
         topPoints: IPoint2D[]
     ) {
         const { lengthPoints, widthPoints, heightPoints } = this;
+
+        const offsetScale = (value: number, offset: number, scale: number) => {
+            return (value - offset) * scale + offset;
+        }
+
         this.left.apply((l, w, p) => {
-            const scale = sidePoints[l].y / heightPoints;
+            const frontScale = frontPoints[widthPoints - 1].y / heightPoints;
+            const yScale = sidePoints[l].y / heightPoints;
+            const zScale = topPoints[l].y / widthPoints;
 
             p.handlers = [(p) => {
                 return {
                     x: p.x,
-                    y: p.y * scale,
-                    z: p.z
+                    y: p.y * yScale * frontScale,
+                    z: offsetScale(p.z, this.halfWidth, zScale)
                 }
             }]
         });
 
         this.right.apply((l, w, p) => {
-            const scale = sidePoints[l].y / heightPoints;
+            const frontScale = frontPoints[0].y / heightPoints;
+            const yScale = sidePoints[l].y / heightPoints;
+            const zScale = topPoints[l].y / widthPoints;
 
             p.handlers = [(p) => {
                 return {
                     x: p.x,
-                    y: p.y * scale,
-                    z: p.z
+                    y: p.y * yScale * frontScale,
+                    z: offsetScale(p.z, this.halfWidth, zScale)
                 }
             }]
         });
 
         this.top.apply((l, w, p) => {
+            const frontScale = frontPoints[w].y / heightPoints;
             const yScale = sidePoints[l].y / heightPoints;
-            const xScale = topPoints[l].y / widthPoints;
+            const zScale = topPoints[l].y / widthPoints;
 
             p.handlers = [(p) => {
                 return {
                     x: p.x,
-                    y: p.y * yScale,
-                    z: (p.z - this.halfWidth) * xScale + this.halfWidth
+                    y: p.y * yScale * frontScale,
+                    z: offsetScale(p.z, this.halfWidth, zScale)
                 }
             }]
         });
 
         this.front.apply((l, w, p) => {
-            const scale = sidePoints[0].y / heightPoints;
+            const frontScale = frontPoints[l].y / heightPoints;
+            const yScale = sidePoints[0].y / heightPoints;
+            const zScale = topPoints[0].y / widthPoints;
 
             p.handlers = [(p) => {
                 return {
                     x: p.x,
-                    y: p.y * scale,
-                    z: p.z
+                    y: p.y * yScale * frontScale,
+                    z: offsetScale(p.z, this.halfWidth, zScale)
                 }
             }]
         });
 
         this.back.apply((l, w, p) => {
-            const scale = sidePoints[lengthPoints - 1].y / heightPoints;
+            const frontScale = frontPoints[l].y / heightPoints;
+            const yScale = sidePoints[lengthPoints - 1].y / heightPoints;
+            const zScale = topPoints[lengthPoints - 1].y / widthPoints;
 
             p.handlers = [(p) => {
                 return {
                     x: p.x,
-                    y: p.y * scale,
-                    z: p.z
+                    y: p.y * yScale * frontScale,
+                    z: offsetScale(p.z, this.halfWidth, zScale)
                 }
             }]
         });

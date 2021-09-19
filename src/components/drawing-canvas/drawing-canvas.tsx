@@ -4,12 +4,11 @@ import { BufferStream, Generate, IPoint2D } from "../../lib";
 import "./drawing-canvas.scss";
 
 interface IProps {
-    width: number;
+    samples: IPoint2D[];
     onChange: (samples: IPoint2D[]) => void;
 }
 
 interface IState {
-    samples: IPoint2D[];
     width: number;
     height: number;
 }
@@ -23,10 +22,9 @@ export class DrawingCanvas extends Component<IProps, IState> {
 
     constructor(props: IProps) {
         super(props);
-        const { width } = this.props;
+        const { samples } = this.props;
         this.state = {
-            samples: Generate.range(0, width).map((i): IPoint2D => ({ x: i, y: 0 })),
-            width: width,
+            width: samples.length,
             height: 300
         }
 
@@ -39,8 +37,6 @@ export class DrawingCanvas extends Component<IProps, IState> {
         const { onChange } = this.props;
 
         document.addEventListener("mouseup", this.onMouseUp);
-
-        onChange(this.state.samples);
     }
 
     componentWillUnmount() {
@@ -95,7 +91,7 @@ export class DrawingCanvas extends Component<IProps, IState> {
 
         this.drawGrid(ctx);
 
-        const { samples } = this.state;
+        const { samples } = this.props;
 
         ctx.lineWidth = 1;
         ctx.imageSmoothingEnabled = true;
@@ -113,6 +109,7 @@ export class DrawingCanvas extends Component<IProps, IState> {
 
     processPoints(points: IPoint2D[]) {
         const { onChange } = this.props;
+        const samples = [...this.props.samples];
 
         for (const pt of points) {
             const { lastPoint } = this;
@@ -123,19 +120,19 @@ export class DrawingCanvas extends Component<IProps, IState> {
                 Generate
                     .inclusive(lastPoint.x, pt.x)
                     .forEach((i, idx) => {
-                        this.state.samples[i].y = lastPoint.y + idx * dy / dx;
+                        samples[i].y = lastPoint.y + idx * dy / dx;
                     })
 
             }
             else {
-                this.state.samples[pt.x].y = pt.y;
+                samples[pt.x].y = pt.y;
             }
 
             this.lastPoint = pt;
         }
 
         this.drawSignal();
-        onChange([...this.state.samples]);
+        onChange(samples);
     }
 
     setPosition(e: React.MouseEvent<HTMLCanvasElement>) {
@@ -152,7 +149,7 @@ export class DrawingCanvas extends Component<IProps, IState> {
         
         const yMax = height / 2 - 5;
         pt.y = Math.min(pt.y, yMax);
-        pt.y = Math.max(pt.y, -yMax);
+        pt.y = Math.max(pt.y, 0/*-yMax*/);
     
         this.buffer?.next(pt);
     }

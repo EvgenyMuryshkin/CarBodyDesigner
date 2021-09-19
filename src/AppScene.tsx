@@ -3,13 +3,14 @@ import * as THREE from 'three';
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { Geom } from "./Geom";
 import { BodyShape } from "./BodyShape";
-import { IPoint2D } from "./lib";
+import { IPoint2D, IPoint3D } from "./lib";
 
 // https://dustinpfister.github.io/2018/04/13/threejs-orbit-controls/
 // https://stackoverflow.com/questions/2368784/draw-on-html5-canvas-using-a-mouse
 // https://threejs.org/docs/#examples/en/controls/OrbitControls
 
 export interface IProps {
+    bodyPoints: IPoint3D;
     length: number;
     sidePoints: IPoint2D[];
     frontPoints: IPoint2D[];
@@ -24,18 +25,19 @@ export class AppScene extends React.Component<IProps> {
     orbitControls: OrbitControls | null = null;
 
     container: HTMLDivElement | null = null;
-    par: Geom | null = null;
 
     public constructor(props: IProps)
     {
         super(props);
-        this.par = new Geom(props.length, 300, 200)
         this.animate = this.animate.bind(this);
     }
 
     componentDidMount() {
         this.init();
+        this.updateMesh();
+
         requestAnimationFrame(this.animate);
+        this.forceUpdate();
     }
 
     componentDidUpdate() {
@@ -44,9 +46,9 @@ export class AppScene extends React.Component<IProps> {
 
     updateMesh() {
         
-        const { par, scene } = this;
+        const { scene } = this;
 
-        if (!scene || !par) return;
+        if (!scene) return;
 
         if (this.bodyMesh)
             this.bodyMesh.forEach(m => this.scene?.remove(m));
@@ -58,8 +60,9 @@ export class AppScene extends React.Component<IProps> {
         scene.add( this.bodyMesh );
         */
 
-        const body = new BodyShape(101, 41, 31);
-        const { sidePoints, frontPoints, topPoints } = this.props;
+        const { bodyPoints, sidePoints, frontPoints, topPoints } = this.props;
+
+        const body = new BodyShape(bodyPoints.x, bodyPoints.y, bodyPoints.z);
         body.apply(sidePoints, frontPoints, topPoints );
         const material = new THREE.MeshBasicMaterial( { color: 0xffff00, wireframe: true } );
         this.bodyMesh = body.geometry.map(m => new THREE.Mesh( m, material ));
@@ -68,9 +71,6 @@ export class AppScene extends React.Component<IProps> {
 
     init()
     {
-        const { par } = this;
-        if (!par) return;
-
         this.scene = new THREE.Scene();
     
         // The X axis is red. The Y axis is green. The Z axis is blue.
@@ -108,7 +108,8 @@ export class AppScene extends React.Component<IProps> {
             this.renderer.setSize( d.offsetWidth - 4, d.offsetHeight - 4 );
 
             if (firstInit) {
-                this.container?.appendChild?.(this.renderer.domElement);
+                this.updateMesh();
+                this.container?.appendChild?.(this.renderer.domElement);                
             }
         }
 /*
