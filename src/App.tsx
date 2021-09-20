@@ -15,19 +15,22 @@ interface IState {
 export class App extends React.Component<{}, IState> {
   constructor(props: any) {
     super(props);
-    const boxSize: IPoint3D = {x: 101, y: 41, z: 31};
+//    const boxSize: IPoint3D = {x: 101, y: 41, z: 31};
+    const boxSize: IPoint3D = {x: 11, y: 7, z: 5};
 
     this.state = {
       boxSize,
-      sidePoints: Generate.range(0, boxSize.x).map(i => ({ x: i, y: 21 })),
-      frontPoints: Generate.range(0, boxSize.y).map(i => ({ x: i, y: 41 })),
-      topPoints: Generate.range(0, boxSize.x).map(i => ({ x: i, y: 41 })),
+      sidePoints: Generate.range(0, boxSize.x).map(i => ({ x: i, y: boxSize.z })),
+      frontPoints: Generate.range(0, boxSize.y).map(i => ({ x: i, y: boxSize.z })),
+      topPoints: Generate.range(0, boxSize.x).map(i => ({ x: i, y: boxSize.y })),
     }
   }
 
   render() {
     const { boxSize, sidePoints, frontPoints, topPoints } = this.state;
-    const length = 550;
+    const canvasWidth = 550;
+    const canvasHeight = 300;
+
     return (
       <div className="App">
         <table className="main-layout">
@@ -36,9 +39,12 @@ export class App extends React.Component<{}, IState> {
               <td>
                 <div className="side-drawing-container">
                   Front
-                  <DrawingCanvas 
-                      samples={frontPoints}
-                      onChange={(newPoints) => {
+                  <DrawingCanvas
+                    width={canvasWidth}
+                    height={canvasHeight}
+                    samples={frontPoints}
+                    maxY={boxSize.z}
+                    onChange={(newPoints) => {
                       this.setState({
                         frontPoints: newPoints
                       })
@@ -50,8 +56,11 @@ export class App extends React.Component<{}, IState> {
                 <div className="side-drawing-container">
                   Top
                   <DrawingCanvas 
-                      samples={topPoints} 
-                      onChange={(newPoints) => {
+                    width={canvasWidth}
+                    height={canvasHeight}
+                    samples={topPoints} 
+                    maxY={boxSize.y}
+                    onChange={(newPoints) => {
                       this.setState({
                         topPoints: newPoints
                       })
@@ -65,17 +74,20 @@ export class App extends React.Component<{}, IState> {
                 <div className="side-drawing-container">
                   Side
                   <DrawingCanvas 
+                    width={canvasWidth}
+                    height={canvasHeight}
                     samples={sidePoints} 
+                    maxY={boxSize.z}
                     onChange={(newPoints) => {
-                    this.setState({
-                      sidePoints: newPoints
-                    })
-                  }}/>
+                      this.setState({
+                        sidePoints: newPoints
+                      })
+                    }}
+                  />
                 </div>
               </td>
               <td><AppScene 
                 bodyPoints={boxSize}
-                length={length} 
                 sidePoints={sidePoints} 
                 frontPoints={frontPoints} 
                 topPoints={topPoints}/></td>

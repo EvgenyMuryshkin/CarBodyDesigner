@@ -30,7 +30,7 @@ export class BodyShape {
         const halfWidth = 0;//(widthPoints - 1) / 2;
         const halfHeight = 0;//(heightPoints - 1) / 2;
 
-        console.log(halfLegth, halfWidth, halfHeight);
+        //console.log(halfLegth, halfWidth, halfHeight);
 
         const scale = (points: number[]): IPoint3D => {
             const scaled = points.map(p => p);

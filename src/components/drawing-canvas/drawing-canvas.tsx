@@ -1,16 +1,22 @@
 import React from "react";
 import { Component } from "react";
 import { BufferStream, Generate, IPoint2D } from "../../lib";
+import { Tools } from "../../lib/tools";
 import "./drawing-canvas.scss";
 
 interface IProps {
+    height: number;
+    width: number;
     samples: IPoint2D[];
+    maxY: number;
     onChange: (samples: IPoint2D[]) => void;
 }
 
 interface IState {
     width: number;
     height: number;
+    xScale: number;
+    yScale: number;
 }
 
 export class DrawingCanvas extends Component<IProps, IState> {
@@ -22,10 +28,12 @@ export class DrawingCanvas extends Component<IProps, IState> {
 
     constructor(props: IProps) {
         super(props);
-        const { samples } = this.props;
+
         this.state = {
-            width: samples.length,
-            height: 300
+            width: props.width,
+            height: props.height,
+            xScale: Math.floor(props.width / props.samples.length),
+            yScale: Math.floor(props.height / props.maxY)
         }
 
         this.onMouseUp = this.onMouseUp.bind(this);
@@ -34,9 +42,11 @@ export class DrawingCanvas extends Component<IProps, IState> {
     }
 
     componentDidMount() {
-        const { onChange } = this.props;
-
         document.addEventListener("mouseup", this.onMouseUp);
+
+        console.log(this.props.width, this.props.samples.length);
+        console.log(this.props.height, this.props.maxY);
+        console.log(this.state.xScale, this.state.yScale);
     }
 
     componentWillUnmount() {
@@ -57,29 +67,51 @@ export class DrawingCanvas extends Component<IProps, IState> {
     }
 
     drawGrid(ctx: CanvasRenderingContext2D) {
-        const { width, height } = this.state;
+        const { samples, maxY } = this.props;
+        const { width, height, xScale, yScale } = this.state;
         ctx.clearRect(0, 0, width, height);
 
         ctx.setLineDash([1, 2])
         ctx.lineWidth = 1;
 
         ctx.beginPath();
-        ctx.moveTo(0, height / 2);
-        ctx.lineTo(width, height / 2);
+        ctx.moveTo(0, height);
+        ctx.lineTo(width, height);
+
+        for (const col of Generate.range(0, samples.length )) {
+            ctx.moveTo(col * xScale, 0);
+            ctx.lineTo(col * xScale, height);    
+        }
+
+        for (const row of Generate.range(0, maxY)) {
+            ctx.moveTo(0, row * yScale);
+            ctx.lineTo(width, row * yScale);    
+        }
+
         ctx.strokeStyle = "#000000";
         ctx.stroke();
         ctx.setLineDash([]);
     }
 
     translate(p: IPoint2D) {
-        const { width, height } = this.state;
+        const { width, height, xScale } = this.state;
 
-        const yAxis = height / 2;
+        const yAxis = height;
 
         return {
-            x: Math.round(p.x),
+            x: Math.floor(p.x),
             y: yAxis - p.y
         };
+    }
+
+    samplePoint(idx: number): IPoint2D {
+        const { samples } = this.props;
+        const { xScale, yScale } = this.state;
+
+        return {
+            x: samples[idx].x * xScale,
+            y: samples[idx].y * yScale
+        }
     }
 
     drawSignal() {
@@ -92,18 +124,21 @@ export class DrawingCanvas extends Component<IProps, IState> {
         this.drawGrid(ctx);
 
         const { samples } = this.props;
+        const { xScale, yScale } = this.state;
 
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 3;
         ctx.imageSmoothingEnabled = true;
 
         ctx.beginPath();
+
         for (let i = 0; i < samples.length - 1; i++) {
-            const from = this.translate(samples[i]);
-            const to = this.translate(samples[i + 1]);
+            const from = this.translate(this.samplePoint(i));
+            const to = this.translate(this.samplePoint(i + 1));
 
             ctx.moveTo(from.x, from.y);
             ctx.lineTo(to.x, to.y);
         }
+
         ctx.stroke();
     }
 
@@ -136,44 +171,46 @@ export class DrawingCanvas extends Component<IProps, IState> {
     }
 
     setPosition(e: React.MouseEvent<HTMLCanvasElement>) {
-        const { height, width } = this.state;
+        const { samples, maxY } = this.props;
+        const { height, width, xScale, yScale } = this.state;
         if (!this.canvas) return;
         e.stopPropagation();
         e.preventDefault();
 
         var rect = this.canvas.getBoundingClientRect();
-        const pt = this.translate({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+        const pt = this.translate({ 
+            x: e.clientX - rect.left, 
+            y: e.clientY - rect.top 
+        });
         
-        if (pt.x < 0) pt.x = 0;
-        if (pt.x >= width) pt.x = width - 1;
-        
-        const yMax = height / 2 - 5;
-        pt.y = Math.min(pt.y, yMax);
-        pt.y = Math.max(pt.y, 0/*-yMax*/);
-    
+        pt.x = Tools.between(Math.round(pt.x / xScale), 0, samples.length - 1);
+        pt.y = Tools.between(Math.round(pt.y / yScale), 0, maxY);
+
         this.buffer?.next(pt);
     }
 
     render() {
-        const { width, height } = this.state;
+        const { width, height, xScale, yScale } = this.state;
 
-        return <canvas
-            width={width}
-            height={height}
-            className="drawing-canvas"
-            onMouseDown={(e) => {
-                if (e.buttons != 1) return;
-                this.enabled = true;
-                this.setPosition(e);
-            }}
-            onMouseMove={(e) => {
-                if (!this.enabled) return;
-                this.setPosition(e);
-            }}
-            ref={(r) => {
-                this.canvas = r;
-                this.drawSignal();
-            }}
-        />
+        return (
+            <canvas
+                width={width}
+                height={height}
+                className="drawing-canvas"
+                onMouseDown={(e) => {
+                    if (e.buttons != 1) return;
+                    this.enabled = true;
+                    this.setPosition(e);
+                }}
+                onMouseMove={(e) => {
+                    if (!this.enabled) return;
+                    this.setPosition(e);
+                }}
+                ref={(r) => {
+                    this.canvas = r;
+                    this.drawSignal();
+                }}
+            />
+        );
     }
 }

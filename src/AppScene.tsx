@@ -11,7 +11,6 @@ import { IPoint2D, IPoint3D } from "./lib";
 
 export interface IProps {
     bodyPoints: IPoint3D;
-    length: number;
     sidePoints: IPoint2D[];
     frontPoints: IPoint2D[];
     topPoints: IPoint2D[];
@@ -65,6 +64,7 @@ export class AppScene extends React.Component<IProps> {
         const body = new BodyShape(bodyPoints.x, bodyPoints.y, bodyPoints.z);
         body.apply(sidePoints, frontPoints, topPoints );
         const material = new THREE.MeshBasicMaterial( { color: 0xffff00, wireframe: true } );
+        //const material = new THREE.MeshBasicMaterial( { color: 0xffff00, wireframe: false } );
         this.bodyMesh = body.geometry.map(m => new THREE.Mesh( m, material ));
         this.bodyMesh.forEach(m => scene.add( m ))
     }
