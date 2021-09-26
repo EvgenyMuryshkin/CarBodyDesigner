@@ -1,6 +1,6 @@
 import { BufferGeometry } from "three";
 import { IPoint2D, IPoint3D } from "./lib";
-import { SidePlane } from "./SidePlane";
+import { generationMode, generationParity, SidePlane } from "./SidePlane";
 
 export class BodyShape {
     private left: SidePlane;
@@ -19,7 +19,11 @@ export class BodyShape {
         return (this.heightPoints - 1) / 2;
     }
 
-    constructor(private lengthPoints: number, private widthPoints: number, private heightPoints: number) {
+    constructor(
+        private lengthPoints: number, 
+        private widthPoints: number, 
+        private heightPoints: number,
+        private parity: generationParity) {
         const geometryScale = 5;
 
         const length = lengthPoints - 1;
@@ -44,32 +48,42 @@ export class BodyShape {
         this.left = new SidePlane({
             length: lengthPoints,
             width: heightPoints,
-            pointsMapper: (l, w) => scale([l - halfLegth, w - halfHeight, width - halfWidth])
+            pointsMapper: (l, w) => scale([l - halfLegth, w - halfHeight, width - halfWidth]),
+            mode: generationMode.LSymmetrical,
+            parity: parity
         });
 
         this.right = new SidePlane({
             length: lengthPoints,
             width: heightPoints,
-            pointsMapper: (l, w) => scale([l - halfLegth, w - halfHeight, - halfWidth])
+            pointsMapper: (l, w) => scale([l - halfLegth, w - halfHeight, - halfWidth]),
+            mode: generationMode.LSymmetrical,
+            parity: parity
         });
 
         this.front = new SidePlane({
             length: widthPoints,
             width: heightPoints,
-            pointsMapper: (l, w) => scale([-halfLegth, w - halfHeight, l - halfWidth])
+            pointsMapper: (l, w) => scale([-halfLegth, w - halfHeight, l - halfWidth]),
+            mode: generationMode.LSymmetrical,
+            parity: parity 
         });
 
         this.back = new SidePlane({
             length: widthPoints,
             width: heightPoints,
-            pointsMapper: (l, w) => scale([length - halfLegth, w - halfHeight, l - halfWidth])
+            pointsMapper: (l, w) => scale([length - halfLegth, w - halfHeight, l - halfWidth]),
+            mode: generationMode.LSymmetrical,
+            parity: parity 
         });
 
         this.top = new SidePlane({
             length: lengthPoints,
             width: widthPoints,
-            pointsMapper: (l, w) => scale([l - halfLegth, height - halfHeight, w - halfWidth])
-        });
+            pointsMapper: (l, w) => scale([l - halfLegth, height - halfHeight, w - halfWidth]),
+            mode: generationMode.LWSymmetrical,
+            parity: parity 
+        });    
     }
 
     public apply(

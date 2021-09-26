@@ -12,11 +12,24 @@ interface IState {
   topPoints: IPoint2D[];
 }
 
+interface IDesign {
+  name: string;
+  boxSize: IPoint3D;
+  sidePoints: IPoint2D[];
+  frontPoints: IPoint2D[];
+  topPoints: IPoint2D[];
+}
+
+interface IStorageModel {
+  designs: IDesign[];
+}
+
 export class App extends React.Component<{}, IState> {
   constructor(props: any) {
     super(props);
-//    const boxSize: IPoint3D = {x: 101, y: 41, z: 31};
-    const boxSize: IPoint3D = {x: 11, y: 7, z: 5};
+    const boxSize: IPoint3D = {x: 101, y: 41, z: 31};
+//    const boxSize: IPoint3D = {x: 11, y: 7, z: 5};
+//    const boxSize: IPoint3D = {x: 3, y: 3, z: 3};
 
     this.state = {
       boxSize,
@@ -26,9 +39,48 @@ export class App extends React.Component<{}, IState> {
     }
   }
 
+  componentDidMount() {
+    const model = this.loadFromLocalStorage();
+    if (!model?.designs?.length) return;
+
+    const design = model.designs[0];
+    const { boxSize, topPoints, frontPoints, sidePoints } = design; 
+    this.setState({
+      boxSize,
+      topPoints,
+      frontPoints,
+      sidePoints
+    })
+  }
+
+  loadFromLocalStorage() : IStorageModel {
+    const json = localStorage.getItem("Designs");
+    if (!json) return { designs: [] }
+
+    return JSON.parse(json) as IStorageModel;
+  }
+
+  saveToLocalStorage() {
+    const { boxSize, frontPoints, sidePoints, topPoints } = this.state;
+
+    const model = this.loadFromLocalStorage();
+    model.designs = [
+      {
+        name: "Default",
+        boxSize,
+        frontPoints,
+        sidePoints,
+        topPoints
+      }
+    ];
+
+    const payload = JSON.stringify(model);
+    localStorage.setItem("Designs", payload);
+  }
+
   render() {
     const { boxSize, sidePoints, frontPoints, topPoints } = this.state;
-    const canvasWidth = 550;
+    const canvasWidth = 700;
     const canvasHeight = 300;
 
     return (
@@ -47,7 +99,7 @@ export class App extends React.Component<{}, IState> {
                     onChange={(newPoints) => {
                       this.setState({
                         frontPoints: newPoints
-                      })
+                      }, () => this.saveToLocalStorage())
                     }}
                   />
                 </div>
@@ -63,7 +115,7 @@ export class App extends React.Component<{}, IState> {
                     onChange={(newPoints) => {
                       this.setState({
                         topPoints: newPoints
-                      })
+                      }, () => this.saveToLocalStorage())
                     }}
                   />
                 </div>
@@ -81,7 +133,7 @@ export class App extends React.Component<{}, IState> {
                     onChange={(newPoints) => {
                       this.setState({
                         sidePoints: newPoints
-                      })
+                      }, () => this.saveToLocalStorage())
                     }}
                   />
                 </div>
