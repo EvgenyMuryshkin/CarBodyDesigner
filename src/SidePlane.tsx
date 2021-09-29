@@ -43,7 +43,7 @@ export class SidePlane {
 
     constructor(props: ISidePlaneProps) {
         const { length, width, pointsMapper } = props;
-        const { vertices, indices, uvs, normals } = this;
+        const { vertices, indices, uvs } = this;
 
         this.props = props;
 
@@ -121,7 +121,7 @@ export class SidePlane {
                                 ]; 
                             }    
                         case generationMode.LWSymmetrical:
-                            if ((w < wHalf) == (l < lHalf)) {
+                            if ((w < wHalf) === (l < lHalf)) {
                                 return [
                                     i0, i1, i3,
                                     i0, i3, i2,
@@ -134,6 +134,7 @@ export class SidePlane {
                                 ]; 
                             }  
                     }
+                    break;
                 case "back":
                     switch (mode) {
                         case generationMode.Uniform: 
@@ -168,7 +169,7 @@ export class SidePlane {
                                 ]  
                             } 
                         case generationMode.LWSymmetrical:
-                            if ((w < wHalf) == (l < lHalf)) {
+                            if ((w < wHalf) === (l < lHalf)) {
                                 return [
                                     i0, i3, i1,
                                     i0, i2, i3,
@@ -188,7 +189,7 @@ export class SidePlane {
 
         for (const l of Generate.range(0, length - 1)) {
             for (const w of Generate.range(0, width - 1)) {
-                if (!this.parityMatch((l + w) % 2 != 0)) continue;
+                if (!this.parityMatch((l + w) % 2 !== 0)) continue;
 
                 indices.push(...facesFromIndexes(0, l, w, "front"));
             }
@@ -196,7 +197,7 @@ export class SidePlane {
 
         for (const l of Generate.range(0, length - 1)) {
             for (const w of Generate.range(0, width - 1)) {
-                if (!this.parityMatch((l + w) % 2 != 0)) continue;
+                if (!this.parityMatch((l + w) % 2 !== 0)) continue;
 
                 indices.push(...facesFromIndexes(this.offset, l, w, "back"));
             }
@@ -206,8 +207,8 @@ export class SidePlane {
     private parityMatch(value: boolean) {
         const { parity } = this.props;
         switch (parity) {
-            case generationParity.Even: return value == false;
-            case generationParity.Odd: return value == true;
+            case generationParity.Even: return value === false;
+            case generationParity.Odd: return value === true;
             default: return true;
         }
     }
@@ -230,7 +231,7 @@ export class SidePlane {
 
     public geometry(scale: number): BufferGeometry {
         const { vertices, indices, uvs, normals } = this;
-        const { length, width, log } = this.props;
+        const { log } = this.props;
 
         const r = new BufferGeometry();
 

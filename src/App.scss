@@ -14,6 +14,7 @@ body {
 .App {
   text-align: center;
   height: 100%;
+  display: flex;
 }
 
 .App-logo {
@@ -49,6 +50,40 @@ body {
   to {
     transform: rotate(360deg);
   }
+}
+
+.design-selector {
+  display: inline-block;
+  border: 2px solid black;
+  padding-left: 2px;
+  padding-right: 2px;
+  margin-right: 3px;
+  font-size: large;
+
+  &:hover {
+    background-color: lightgreen;
+  }
+}
+
+.design-selector-active {
+  font-weight: bold;
+}
+
+.menu {
+  .menu-item {
+    width: 32px;
+    height: 32px;
+  }
+
+  .selected {
+    background-color: lightgreen;
+  }
+
+  display: flex;
+}
+
+.menu-side {
+  flex-direction: column;
 }
 
 .main-layout {

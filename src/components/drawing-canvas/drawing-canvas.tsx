@@ -5,6 +5,7 @@ import { Tools } from "../../lib/tools";
 import "./drawing-canvas.scss";
 
 interface IProps {
+    symmetrical: boolean;
     height: number;
     width: number;
     samples: IPoint2D[];
@@ -106,24 +107,11 @@ export class DrawingCanvas extends Component<IProps, IState> {
         ctx.setLineDash([]);
     }
 
-    translate(p: IPoint2D, toCanvas: boolean) {
+    translate(p: IPoint2D) {
         const { maxY } = this.props;
-        const { margin, scale } = this.state;
+        const { scale } = this.state;
         const yAxis = maxY * scale;
-/*
-        if (toCanvas) {
-            return {
-                x: margin + Math.floor(p.x),
-                y: -margin + yAxis - p.y
-            };
-        }
-        else {
-            return {
-                x: -margin + Math.floor(p.x),
-                y: margin + yAxis - p.y
-            };
-        }
-*/
+
         return {
             x: Math.floor(p.x),
             y: yAxis - p.y
@@ -158,8 +146,8 @@ export class DrawingCanvas extends Component<IProps, IState> {
         ctx.beginPath();
 
         for (let i = 0; i < samples.length - 1; i++) {
-            const from = this.translate(this.samplePoint(i), true);
-            const to = this.translate(this.samplePoint(i + 1), true);
+            const from = this.translate(this.samplePoint(i));
+            const to = this.translate(this.samplePoint(i + 1));
 
             ctx.moveTo(margin + from.x, margin + from.y);
             ctx.lineTo(margin + to.x, margin + to.y);
@@ -168,27 +156,58 @@ export class DrawingCanvas extends Component<IProps, IState> {
         ctx.stroke();
     }
 
+    lerp(samples: IPoint2D[], from: IPoint2D, to: IPoint2D) {
+        const dx = to.x - from.x;
+        const dy = to.y - from.y;
+        const delta = dy / dx;
+
+        Generate
+        .inclusive(from.x, to.x)
+        .forEach((i, idx) => {
+            samples[i].y = from.y + idx * delta;
+        })
+    }
+
+    reflect(pt: IPoint2D): IPoint2D {
+        const { samples } = this.props;
+        const halfIndex = (samples.length - 1) / 2;
+
+        return {
+            x: 2 * halfIndex - pt.x,
+            y: pt.y
+        }
+    }
+
     processPoints(points: IPoint2D[]) {
-        const { onChange } = this.props;
+        const { symmetrical, onChange } = this.props;
         const samples = [...this.props.samples];
+
+        const halfIndex = (samples.length - 1) / 2;
 
         for (const pt of points) {
             const { lastPoint } = this;
             if (lastPoint && pt.x !== lastPoint.x) {
-                const dx = pt.x - lastPoint.x;
-                const dy = pt.y - lastPoint.y;
-
-                const delta = dy / dx;
-
-                Generate
-                    .inclusive(lastPoint.x, pt.x)
-                    .forEach((i, idx) => {
-                        samples[i].y = lastPoint.y + idx * delta;
-                    })
-
+                if (symmetrical) {
+                    if (Tools.between(halfIndex, lastPoint.x, pt.x)) {
+                        // do nothing here
+                    }
+                    else {
+                        this.lerp(samples, lastPoint, pt);
+                        this.lerp(samples, this.reflect(lastPoint), this.reflect(pt));
+                    }
+                }
+                else {
+                    this.lerp(samples, lastPoint, pt);
+                }                
             }
             else {
-                samples[pt.x].y = pt.y;
+                if (symmetrical) {
+                    samples[pt.x].y = pt.y;
+                    samples[this.reflect(pt).x].y = pt.y;
+                }
+                else {
+                    samples[pt.x].y = pt.y;
+                }
             }
 
             this.lastPoint = pt;
@@ -209,7 +228,7 @@ export class DrawingCanvas extends Component<IProps, IState> {
         const pt = this.translate({ 
             x: e.clientX - rect.left - margin, 
             y: e.clientY - rect.top - margin 
-        }, false);
+        });
         
         pt.x = Tools.between(Math.round(pt.x / scale), 0, samples.length - 1);
         pt.y = Tools.between(pt.y / scale, 0, maxY - 1);
@@ -231,19 +250,16 @@ export class DrawingCanvas extends Component<IProps, IState> {
                         height={height + 2 * margin}
                         className="drawing-canvas"
                         onMouseDown={(e) => {
-                            if (e.buttons != 1) return;
+                            if (e.buttons !== 1) return;
                             this.enabled = true;
                             this.lastPoint = null;
                             this.setPosition(e);
                         }}
                         onMouseMove={(e) => {
                             if (!this.enabled) return;
-                            console.log("moving");
                             this.setPosition(e);
                         }}
                         onMouseUp={e => {
-                            console.log("up");
-
                             e.stopPropagation();
                             e.preventDefault();
                             this.mouseDisconnected();

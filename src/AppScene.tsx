@@ -1,12 +1,11 @@
 import React from "react"
 import * as THREE from 'three';
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import { Geom } from "./Geom";
 import { BodyShape } from "./BodyShape";
 import { IPoint2D, IPoint3D } from "./lib";
 import { Vector3 } from "three";
 import { generationParity } from "./SidePlane";
-
+import { Subject, debounce, Subscription, interval } from "rxjs";
 // https://dustinpfister.github.io/2018/04/13/threejs-orbit-controls/
 // https://stackoverflow.com/questions/2368784/draw-on-html5-canvas-using-a-mouse
 // https://threejs.org/docs/#examples/en/controls/OrbitControls
@@ -16,15 +15,17 @@ export interface IProps {
     sidePoints: IPoint2D[];
     frontPoints: IPoint2D[];
     topPoints: IPoint2D[];
+    wireframes: boolean;
+    flatShading: boolean;
 }
 
 interface IState {
-    wireframes: boolean;
-    flatShading: boolean;
-
 }
 
 export class AppScene extends React.Component<IProps, IState> {
+    _subscription: Subscription;
+    _updateStream: Subject<{}> = new Subject<{}>();
+
     scene: THREE.Scene | null = null;
     camera: THREE.PerspectiveCamera | null = null;
     light: THREE.DirectionalLight | null = null;
@@ -38,10 +39,14 @@ export class AppScene extends React.Component<IProps, IState> {
     {
         super(props);
         this.state = {
-            wireframes: false,
             flatShading: true
         }
         this.animate = this.animate.bind(this);
+        
+        this._subscription = this
+            ._updateStream
+            .pipe(debounce(() => interval(1000)))
+            .subscribe(() => this.updateMesh());
     }
 
     componentDidMount() {
@@ -53,7 +58,11 @@ export class AppScene extends React.Component<IProps, IState> {
     }
 
     componentDidUpdate() {
-        this.updateMesh();
+        this._updateStream.next({});
+    }
+
+    componentWillUnmount() {
+        this._subscription.unsubscribe();
     }
 
     updateMesh() {
@@ -73,8 +82,7 @@ export class AppScene extends React.Component<IProps, IState> {
         scene.add( this.bodyMesh );
         */
 
-        const { bodyPoints, sidePoints, frontPoints, topPoints } = this.props;
-        const { wireframes, flatShading } = this.state;
+        const { bodyPoints, sidePoints, frontPoints, topPoints, wireframes, flatShading } = this.props;
 
         const wireframesColor = 0x00FF00;
 
@@ -165,7 +173,7 @@ export class AppScene extends React.Component<IProps, IState> {
         this.container = d;
         if (d && this.renderer?.domElement)
         {
-            this.renderer.setSize( d.offsetWidth - 4, d.offsetHeight - 40 );
+            this.renderer.setSize( d.offsetWidth - 4, d.offsetHeight - 4 );
 
             if (firstInit) {
                 this.updateMesh();
@@ -188,13 +196,8 @@ export class AppScene extends React.Component<IProps, IState> {
     }
 
     public render() {
-        const { wireframes, flatShading } = this.state;
         return (
             <div className="three-container">
-                <div>
-                    <input type="checkbox" checked={wireframes} onChange={e => this.setState({ wireframes: e.target.checked })} /> Wireframes
-                    <input type="checkbox" checked={flatShading} onChange={e => this.setState({ flatShading: e.target.checked })} /> Flat shading
-                </div>
                 <div className="three-container" ref={(d) => this.onContainerCreated(d)} />
             </div>
         )

@@ -8,6 +8,7 @@ export class BodyShape {
     private front: SidePlane;
     private back: SidePlane;
     private top: SidePlane;
+    private bottom: SidePlane;
 
     get halfLegth() {
         return (this.lengthPoints - 1) / 2;
@@ -23,8 +24,7 @@ export class BodyShape {
         private lengthPoints: number, 
         private widthPoints: number, 
         private heightPoints: number,
-        private parity: generationParity) {
-        const geometryScale = 5;
+        parity: generationParity) {
 
         const length = lengthPoints - 1;
         const width = widthPoints - 1;
@@ -84,6 +84,14 @@ export class BodyShape {
             mode: generationMode.LWSymmetrical,
             parity: parity 
         });    
+
+        this.bottom = new SidePlane({
+            length: lengthPoints,
+            width: widthPoints,
+            pointsMapper: (l, w) => scale([l - halfLegth, 0/*height - halfHeight*/, w - halfWidth]),
+            mode: generationMode.LWSymmetrical,
+            parity: parity 
+        });  
     }
 
     public apply(
@@ -139,6 +147,20 @@ export class BodyShape {
             }]
         });
 
+        this.bottom.apply((l, w, p) => {
+            const frontScale = frontPoints[w].y / heightPoints;
+            const yScale = sidePoints[l].y / heightPoints;
+            const zScale = topPoints[l].y / widthPoints;
+
+            p.handlers = [(p) => {
+                return {
+                    x: p.x,
+                    y: p.y * yScale * frontScale,
+                    z: offsetScale(p.z, this.halfWidth, zScale)
+                }
+            }]
+        });
+
         this.front.apply((l, w, p) => {
             const frontScale = frontPoints[l].y / heightPoints;
             const yScale = sidePoints[0].y / heightPoints;
@@ -169,13 +191,14 @@ export class BodyShape {
     }
 
     public get geometry(): BufferGeometry[] {
-        const { left, right, front, back, top } = this;
+        const { left, right, front, back, top, bottom } = this;
         return [
             left,
             right,
             front, 
             back, 
-            top
+            top,
+            bottom
         ].map(p => p.geometry(5));
     }
 }
