@@ -1,12 +1,19 @@
 export class Tools {
+    static withinRange(value: number, min: number, max: number) {
+        const mMin = Math.min(min, max);
+        const mMax = Math.max(min, max);
+
+        if (value < mMin) return mMin;
+        if (value > mMax) return mMax;    
+
+        return value;
+    }
+
     static between(value: number, min: number, max: number) {
         const mMin = Math.min(min, max);
         const mMax = Math.max(min, max);
 
-        if (value < mMin) return min;
-        if (value > mMax) return max;    
-
-        return value;
+        return value > mMin && value < mMax;
     }
 
     static classNames(source: {[key: string]: boolean}) {
@@ -16,5 +23,10 @@ export class Tools {
         const values = keys.filter(k => source[k]).join(" ");
 
         return values;
+    }
+
+    static clone<T>(source: T): T {
+        const json = JSON.stringify(source);
+        return JSON.parse(json);
     }
 }

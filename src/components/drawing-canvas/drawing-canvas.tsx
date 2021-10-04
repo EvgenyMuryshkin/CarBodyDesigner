@@ -4,7 +4,7 @@ import { BufferStream, Generate, IPoint2D } from "../../lib";
 import { Tools } from "../../lib/tools";
 import "./drawing-canvas.scss";
 
-interface IProps {
+export interface IDrawingCanvasProps {
     symmetrical: boolean;
     height: number;
     width: number;
@@ -20,14 +20,14 @@ interface IState {
     scale: number;
 }
 
-export class DrawingCanvas extends Component<IProps, IState> {
+export class DrawingCanvas extends Component<IDrawingCanvasProps, IState> {
     canvas: HTMLCanvasElement | null = null;
     buffer: BufferStream<IPoint2D> | null = null;
 
     enabled = false;
     lastPoint: IPoint2D | null = null;
 
-    constructor(props: IProps) {
+    constructor(props: IDrawingCanvasProps) {
         super(props);
 
         const scale = Math.min(
@@ -38,7 +38,7 @@ export class DrawingCanvas extends Component<IProps, IState> {
             //width: props.width,
             //height: props.height,
             scale: scale,
-            margin: 15
+            margin: 25
         }
 
         this.onMouseUp = this.onMouseUp.bind(this);
@@ -190,10 +190,14 @@ export class DrawingCanvas extends Component<IProps, IState> {
                 if (symmetrical) {
                     if (Tools.between(halfIndex, lastPoint.x, pt.x)) {
                         // do nothing here
+                        console.log("skipped", halfIndex, lastPoint.x, pt.x);
+
+                        //this.lerp(samples, lastPoint, pt);
+                        //this.lerp(samples, this.reflect(pt), this.reflect(lastPoint));
                     }
                     else {
                         this.lerp(samples, lastPoint, pt);
-                        this.lerp(samples, this.reflect(lastPoint), this.reflect(pt));
+                        this.lerp(samples, this.reflect(pt), this.reflect(lastPoint));
                     }
                 }
                 else {
@@ -230,8 +234,8 @@ export class DrawingCanvas extends Component<IProps, IState> {
             y: e.clientY - rect.top - margin 
         });
         
-        pt.x = Tools.between(Math.round(pt.x / scale), 0, samples.length - 1);
-        pt.y = Tools.between(pt.y / scale, 0, maxY - 1);
+        pt.x = Tools.withinRange(Math.round(pt.x / scale), 0, samples.length - 1);
+        pt.y = Tools.withinRange(pt.y / scale, 0, maxY);
 
         this.buffer?.next(pt);
     }
@@ -249,20 +253,68 @@ export class DrawingCanvas extends Component<IProps, IState> {
                         width={width + 2 * margin}
                         height={height + 2 * margin}
                         className="drawing-canvas"
+                        onDoubleClick={e => {
+                            e.stopPropagation();
+                            e.preventDefault();         
+                        }}
+                        onContextMenu={e => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                        }}
+                        onPointerEnter={e => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }}
+                        onPointerLeave={e => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            this.mouseDisconnected();
+                        }}
+                        onPointerDown={e => {
+                            if (e.buttons !== 1) return;
+
+                            this.enabled = true;
+                            this.lastPoint = null;
+                            this.setPosition(e);
+
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }}
+                        onPointerUp={e => {
+                            this.mouseDisconnected();
+ 
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }}
+                        onPointerMove={e => {
+                            if (!this.enabled) return;
+                            this.setPosition(e);
+
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }}
+                        onPointerCancel={e => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }}
                         onMouseDown={(e) => {
                             if (e.buttons !== 1) return;
                             this.enabled = true;
                             this.lastPoint = null;
                             this.setPosition(e);
+                            e.preventDefault();
+                            e.stopPropagation(); 
                         }}
                         onMouseMove={(e) => {
                             if (!this.enabled) return;
                             this.setPosition(e);
+                            e.preventDefault();
+                            e.stopPropagation();
                         }}
                         onMouseUp={e => {
+                            this.mouseDisconnected();
                             e.stopPropagation();
                             e.preventDefault();
-                            this.mouseDisconnected();
                         }}
                         ref={(r) => {
                             this.canvas = r;

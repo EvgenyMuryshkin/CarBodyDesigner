@@ -17,6 +17,8 @@ export interface IProps {
     topPoints: IPoint2D[];
     wireframes: boolean;
     flatShading: boolean;
+    colorOdd: number;
+    colorEven: number;
 }
 
 interface IState {
@@ -45,13 +47,13 @@ export class AppScene extends React.Component<IProps, IState> {
         
         this._subscription = this
             ._updateStream
-            .pipe(debounce(() => interval(1000)))
-            .subscribe(() => this.updateMesh());
+            .pipe(debounce(() => interval(500)))
+            .subscribe(() => this.updateMesh("debounce"));
     }
 
     componentDidMount() {
         this.init();
-        this.updateMesh();
+        this.updateMesh("mount");
 
         requestAnimationFrame(this.animate);
         this.forceUpdate();
@@ -65,8 +67,7 @@ export class AppScene extends React.Component<IProps, IState> {
         this._subscription.unsubscribe();
     }
 
-    updateMesh() {
-        
+    updateMesh(from: string) {
         const { scene } = this;
 
         if (!scene) return;
@@ -75,20 +76,14 @@ export class AppScene extends React.Component<IProps, IState> {
             this.bodyMesh.forEach(m => this.scene?.remove(m));
 
         this.bodyMesh = [];
-        /*
-        par.update(this.props.points);
-        const material = new THREE.MeshBasicMaterial( { color: 0xffff00, wireframe: true } );
-        this.bodyMesh = new THREE.Mesh( par, material );
-        scene.add( this.bodyMesh );
-        */
 
-        const { bodyPoints, sidePoints, frontPoints, topPoints, wireframes, flatShading } = this.props;
+        const { bodyPoints, sidePoints, frontPoints, topPoints, wireframes, flatShading, colorOdd, colorEven } = this.props;
 
         const wireframesColor = 0x00FF00;
-
+        
         const parts = [
-            { parity: generationParity.Odd, color: 0xEB7D09 },
-            { parity: generationParity.Even, color: 0x000000 }          
+            { parity: generationParity.Odd, color: colorOdd },
+            { parity: generationParity.Even, color: colorEven }          
         ];
 
         for (const p of parts) {
@@ -168,17 +163,11 @@ export class AppScene extends React.Component<IProps, IState> {
     }
 
     onContainerCreated(d: HTMLDivElement | null) {
-        const firstInit = this.container == null;
-
         this.container = d;
         if (d && this.renderer?.domElement)
         {
-            this.renderer.setSize( d.offsetWidth - 4, d.offsetHeight - 4 );
-
-            if (firstInit) {
-                this.updateMesh();
-                this.container?.appendChild?.(this.renderer.domElement);                
-            }
+            this.renderer.setSize(d.offsetWidth - 2, d.offsetHeight - 2);
+            d.appendChild?.(this.renderer.domElement);                
         }
 /*
         window.addEventListener("resize", () => {

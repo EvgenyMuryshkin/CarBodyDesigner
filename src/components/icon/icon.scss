@@ -1,7 +1,22 @@
 .icon-container {
+
     .icon {
+        margin: 2px;
+        border: 2px solid black;
+        padding: 2px;
+    }
+
+    .icon-small {
+        width: 24px;
+        height: 24px;
+    }
+    .icon-medium {
         width: 32px;
         height: 32px;
+    }
+    .icon-large {
+        width: 48px;
+        height: 48px;
     }
 
     .icon-selected {
