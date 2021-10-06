@@ -102,6 +102,21 @@ export class AppScene extends React.Component<IProps, IState> {
         this.bodyMesh.forEach(m => scene.add( m ));
     }
 
+    initGround() {
+        if (!this.scene) return;
+
+        const ground = new THREE.Mesh( new THREE.PlaneGeometry( 2000, 2000 ), new THREE.MeshPhongMaterial( { color: 0x999999, depthWrite: false } ) );
+        ground.rotation.x = - Math.PI / 2;
+        ground.receiveShadow = true;
+        this.scene.add( ground );
+
+        const grid = new THREE.GridHelper( 2000, 20, 0x000000, 0x000000 );
+        const gridMaterial = grid.material as THREE.Material;
+        gridMaterial.opacity = 0.2;
+        gridMaterial.transparent = true;
+        this.scene.add( grid );
+    }
+
     init()
     {
         this.scene = new THREE.Scene();
@@ -110,14 +125,20 @@ export class AppScene extends React.Component<IProps, IState> {
         var axesHelper = new THREE.AxesHelper( 500 );
         this.scene.add( axesHelper );
 
+        //this.scene.background = new THREE.Color( 0xa0a0a0 );
+        //this.scene.fog = new THREE.Fog( 0xa0a0a0, 200, 5000 );
+
         this.camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
         this.camera.position.z = 1000;
         
         this.renderer = new THREE.WebGLRenderer();
         this.renderer.setPixelRatio( window.devicePixelRatio );
+        this.renderer.shadowMap.enabled = true;
 
         this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
-
+        this.orbitControls.target.set( 0, 25, 0 );
+        this.orbitControls.update();
+        
         this.scene.add( new THREE.AmbientLight( 0x777777 ) );
 
         this.light = new THREE.DirectionalLight( 0xdfebff, 1 );
@@ -139,6 +160,8 @@ export class AppScene extends React.Component<IProps, IState> {
         this.light.shadow.camera.far = 1000;
 
         this.scene.add( this.light );
+
+        this.initGround();
     }
 
     ang = 0;

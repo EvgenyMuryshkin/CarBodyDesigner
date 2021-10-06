@@ -2,10 +2,17 @@ import React from 'react';
 import './App.scss';
 import { AppScene } from './AppScene';
 import { Generate, IPoint3D, Tools } from './lib';
-import { Forms, Icon, ModalsComponent } from './components';
+import { Forms, Icon, IIconProps, ModalsComponent } from './components';
 import { Dialogs } from './components/modal/modal';
 import { DesignStore, IDesign, IStorageModel } from './DesignStore';
 import { SideEditor } from './components/side-editor';
+import { STLExporter  } from "three/examples/jsm/exporters/STLExporter";
+import { mergeBufferGeometries } from "three/examples/jsm/utils/BufferGeometryUtils";
+
+import { BodyShape } from './BodyShape';
+import { generationParity } from './SidePlane';
+import * as THREE from "three";
+import { MathUtils } from 'three';
 
 interface IState {
   storageModel: IStorageModel;
@@ -21,7 +28,7 @@ export class App extends React.Component<{}, IState> {
     this.state = {
       currentDesign: null,
       wireframes: false,
-      flatShading: true,
+      flatShading: false,
       storageModel: DesignStore.loadFromLocalStorage()
     }
   }
@@ -239,40 +246,101 @@ export class App extends React.Component<{}, IState> {
 
   }
 
+  async exportSTL() {
+    const { currentDesign } = this.state;
+    if (!currentDesign) return;
+
+    const params = await Forms.Modal("Export to STL", {
+      stringName: `${currentDesign.name}.stl`,
+      intXRotationDeg: 0,
+      intYRotationDeg: 0,
+      intZRotationDeg: 0
+    });
+
+    if (!params) return;
+
+    const { boxSize, topPoints, frontPoints, sidePoints } = currentDesign;
+    const exporter = new STLExporter();
+    const bodyShape = new BodyShape(boxSize.x, boxSize.y, boxSize.z, generationParity.All);
+    bodyShape.apply(sidePoints, frontPoints, topPoints );
+    const singleGeometry = mergeBufferGeometries(bodyShape.geometry);
+    
+    singleGeometry.rotateX(MathUtils.degToRad(params.intXRotationDeg));
+    singleGeometry.rotateY(MathUtils.degToRad(params.intYRotationDeg));
+    singleGeometry.rotateZ(MathUtils.degToRad(params.intXRotationDeg));
+
+    const material = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
+    const mesh = new THREE.Mesh( singleGeometry, material );
+
+    const stl = exporter.parse(mesh);
+    const link = document.createElement( 'a' );
+    link.style.display = 'none';
+    document.body.appendChild( link );
+
+    const blob = new Blob( [ stl ], { type: 'text/plain' } );
+
+    link.href = URL.createObjectURL( blob );
+    link.download = params.stringName || "test.stl";
+    link.click();
+
+    link.remove();
+  }
+
+  renderToolbar() {
+    const { wireframes, flatShading } = this.state;
+    const iconParams: Partial<IIconProps> = {
+        bordered: true
+    }
+
+    return (
+      <div className="menu menu-top">
+        <Icon type="VscNewFile" title="New Design" {...iconParams} onClick={() => this.newDesign()}/>
+        <div className="icon-separator">&nbsp;</div>
+        <Icon type="GrClone" title="Clone Design" {...iconParams} onClick={() => this.cloneDesign()}/>
+        <Icon type="AiOutlineSetting" title="Settings" {...iconParams} onClick={() => this.settings()}/>
+        <Icon type="AiOutlineCloseCircle" title="Delete Design" {...iconParams} onClick={() => this.deleteDesign()}/>
+
+        {/*<Icon type="GrPowerReset" onClick={() => this.resetModel()}/>*/}
+        <div className="icon-separator">&nbsp;</div>
+        <Icon type="GiWireframeGlobe" title="Wireframes" {...iconParams} selected={wireframes} onClick={() => this.setState({ wireframes: !wireframes })} />
+        <Icon type="CgEditShadows" title="Flat Shading" {...iconParams} selected={flatShading} onClick={() => this.setState({ flatShading: !flatShading })}/>
+        <Icon type="AiOutlineExport" title="Export STL" {...iconParams} onClick={() => this.exportSTL()}/>
+      </div>      
+    );
+  }
+
+  renderDesignSelector() {
+    const { storageModel, currentDesign } = this.state;
+
+    return (
+      <div className="menu menu-top">
+        {storageModel.designs.map(d => {
+          const classes = {
+            "design-selector": true,
+            "design-selector-active": d === currentDesign
+          }
+          return (
+            <div key={d.name} className={Tools.classNames(classes)} onClick={() => {
+              this.setState({
+                currentDesign: d
+              })
+            }}>{d.name}</div>
+          );
+        })}
+      </div>      
+    )
+  }
+
   render() {
-    const { storageModel, currentDesign, wireframes, flatShading } = this.state;
+    const { currentDesign } = this.state;
 
     if (!currentDesign) return null;
 
     return (
       <div className="App">
-        <div className="menu menu-side">
-          {/*<Icon type="GrPowerReset" onClick={() => this.resetModel()}/>*/}
-          <Icon type="GiWireframeGlobe" title="Wireframes" selected={wireframes} onClick={() => this.setState({ wireframes: !wireframes })} />
-          <Icon type="CgEditShadows" title="Flat Shading" selected={flatShading} onClick={() => this.setState({ flatShading: !flatShading })}/>
-        </div>
         <div>
-          <div className="menu menu-top">
-            <Icon type="VscNewFile" title="New Design" onClick={() => this.newDesign()}/>
-            <Icon type="GrClone" title="Clone Design" onClick={() => this.cloneDesign()}/>
-            <Icon type="AiOutlineSetting" title="Settings" onClick={() => this.settings()}/>
-            <Icon type="AiOutlineCloseCircle" title="Delete Design" onClick={() => this.deleteDesign()}/>
-          </div>
-          <div className="menu menu-top">
-            {storageModel.designs.map(d => {
-              const classes = {
-                "design-selector": true,
-                "design-selector-active": d === currentDesign
-              }
-              return (
-                <div key={d.name} className={Tools.classNames(classes)} onClick={() => {
-                  this.setState({
-                    currentDesign: d
-                  })
-                }}>{d.name}</div>
-              );
-            })}
-          </div>
+          {this.renderToolbar()}
+          {this.renderDesignSelector()}
           {this.renderDesign()}
         </div>   
         <ModalsComponent/>

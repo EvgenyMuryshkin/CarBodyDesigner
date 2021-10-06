@@ -1,9 +1,19 @@
 .icon-container {
 
     .icon {
+        touch-action: none;
+        user-select: none;    
+    }
+
+    .icon-bordered {
         margin: 2px;
         border: 2px solid black;
+        border-radius: 3px;
         padding: 2px;
+        background: #f0f0f0;
+        &:hover {
+            background: #d0d0d0;            
+        }
     }
 
     .icon-small {
@@ -21,5 +31,16 @@
 
     .icon-selected {
         background-color: lightgreen;
+        &:hover {
+            background: green;            
+        }
     }
+}
+
+.icon-separator {
+    height: 32px;
+    background: black;
+    margin-top: 2px;
+    margin-bottom: 2px;
+    width: 3px; 
 }

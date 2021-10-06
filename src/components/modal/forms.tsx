@@ -47,8 +47,6 @@ class DynamicForm<T extends {[key: string]: any}> extends React.Component<IDynam
             }
 
             const modify = (newValue: any) => {
-                console.log(newValue);
-
                 const newModel = Object.assign({}, model, {
                     [key]: newValue
                 })

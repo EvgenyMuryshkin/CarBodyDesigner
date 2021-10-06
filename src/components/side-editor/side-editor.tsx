@@ -1,6 +1,7 @@
 import * as React from "react"
+import { IPoint2D } from "../../lib";
 import { DrawingCanvas, IDrawingCanvasProps } from "../drawing-canvas/drawing-canvas";
-import { Icon } from "../icon/icon";
+import { Icon, IIconProps } from "../icon/icon";
 import { Dialogs } from "../modal/modal";
 import { ModalSideEditor } from "./modal-side-editor";
 import "./side-editor.scss";
@@ -55,14 +56,34 @@ export class SideEditor extends React.Component<ISideEditorProps> {
         }
     }
 
+    smooth() {
+        const { onChange, samples } = this.props;
+        const newSamples = samples
+        .map((s, idx): IPoint2D => {
+            if (idx === 0 || idx === samples.length - 1) return s;
+            return {
+                x: s.x,
+                y: (samples[idx-1].y + samples[idx].y + samples[idx + 1].y) / 3
+            }
+        });
+        onChange(newSamples);
+        console.log(samples, newSamples);
+    }
+
     renderMenu() {
+        const iconParams: Partial<IIconProps> = {
+            bordered: true,
+            size: "small"
+        }
+        
         return (
             <div className="menu menu-top">
-                <Icon type="AiOutlineFullscreen" title="Fullscreen edit" size="small" onClick={async () => await this.fullscreenEdit()}/>
-                <Icon type="ImMoveUp" title="Move Up" size="small" onClick={() => this.moveUp()}/>
-                <Icon type="ImMoveDown" title="Move Up" size="small" onClick={() => this.moveDown()}/>
-                <Icon type="AiOutlineBorderTop" title="All Up" size="small" onClick={() => this.allUp()}/>
-                <Icon type="AiOutlineBorderBottom" title="All Down" size="small" onClick={() => this.allDown()}/>
+                <Icon type="AiOutlineFullscreen" title="Fullscreen edit" {...iconParams} onClick={async () => await this.fullscreenEdit()}/>
+                <Icon type="ImMoveUp" title="Move Up" {...iconParams} onClick={() => this.moveUp()}/>
+                <Icon type="ImMoveDown" title="Move Up" {...iconParams} onClick={() => this.moveDown()}/>
+                <Icon type="AiOutlineBorderTop" title="All Up" {...iconParams} onClick={() => this.allUp()}/>
+                <Icon type="AiOutlineBorderBottom" title="All Down" {...iconParams} onClick={() => this.allDown()}/>
+                <Icon type="GiWhiplash" title="Smooth" {...iconParams} onClick={() => this.smooth()}/>
             </div>
         )
     }
