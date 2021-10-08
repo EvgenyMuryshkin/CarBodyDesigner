@@ -1,7 +1,8 @@
 import * as React from "react"
 import { IPoint2D } from "../../lib";
 import { DrawingCanvas, IDrawingCanvasProps } from "../drawing-canvas/drawing-canvas";
-import { Icon, IIconProps } from "../icon/icon";
+import { drawingMode, IWheelModel } from "../drawing-model";
+import { Icon, IconSeparator, IIconProps } from "../icon/icon";
 import { Dialogs } from "../modal/modal";
 import { ModalSideEditor } from "./modal-side-editor";
 import "./side-editor.scss";
@@ -10,7 +11,19 @@ export interface ISideEditorProps extends IDrawingCanvasProps {
     title: string;
 }
 
-export class SideEditor extends React.Component<ISideEditorProps> {
+interface IState {
+    mode: drawingMode;
+    wheel: IWheelModel | null;
+}
+
+export class SideEditor extends React.Component<ISideEditorProps, IState> {
+    constructor(props: ISideEditorProps) {
+        super(props);
+        this.state = {
+            mode: drawingMode.Contour,
+            wheel: null
+        }
+    }
 
     moveUp() {
         const { maxY, onChange } = this.props;
@@ -71,6 +84,7 @@ export class SideEditor extends React.Component<ISideEditorProps> {
     }
 
     renderMenu() {
+        const { mode } = this.state;
         const iconParams: Partial<IIconProps> = {
             bordered: true,
             size: "small"
@@ -79,6 +93,10 @@ export class SideEditor extends React.Component<ISideEditorProps> {
         return (
             <div className="menu menu-top">
                 <Icon type="AiOutlineFullscreen" title="Fullscreen edit" {...iconParams} onClick={async () => await this.fullscreenEdit()}/>
+                <IconSeparator {...iconParams}/>
+                <Icon type="ImPencil2" title="Draw countour" {...iconParams} selected={mode === drawingMode.Contour} onClick={() => this.setState({ mode: drawingMode.Contour })}/>   
+                <Icon type="GiCartwheel" title="Draw wheel" {...iconParams} selected={mode === drawingMode.Wheel} onClick={() => this.setState({ mode: drawingMode.Wheel, wheel: null })}/>
+                <IconSeparator {...iconParams}/>
                 <Icon type="ImMoveUp" title="Move Up" {...iconParams} onClick={() => this.moveUp()}/>
                 <Icon type="ImMoveDown" title="Move Up" {...iconParams} onClick={() => this.moveDown()}/>
                 <Icon type="AiOutlineBorderTop" title="All Up" {...iconParams} onClick={() => this.allUp()}/>
@@ -90,6 +108,7 @@ export class SideEditor extends React.Component<ISideEditorProps> {
     
     render() {
         const { title, width, height, maxY, symmetrical, samples, onChange} = this.props;
+        const { mode, wheel } = this.state;
 
         return (
             <div className="side-editor">
@@ -102,7 +121,10 @@ export class SideEditor extends React.Component<ISideEditorProps> {
                         height={height}
                         samples={samples} 
                         maxY={maxY}
+                        mode={mode}
                         onChange={onChange}
+                        wheel={wheel}
+                        onWheelChange={wheel => this.setState({ wheel: wheel })}
                     />
                 </div>
             </div>

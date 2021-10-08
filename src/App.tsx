@@ -2,7 +2,7 @@ import React from 'react';
 import './App.scss';
 import { AppScene } from './AppScene';
 import { Generate, IPoint3D, Tools } from './lib';
-import { Forms, Icon, IIconProps, ModalsComponent } from './components';
+import { Forms, Icon, IconSeparator, IIconProps, ModalsComponent } from './components';
 import { Dialogs } from './components/modal/modal';
 import { DesignStore, IDesign, IStorageModel } from './DesignStore';
 import { SideEditor } from './components/side-editor';
@@ -295,13 +295,13 @@ export class App extends React.Component<{}, IState> {
     return (
       <div className="menu menu-top">
         <Icon type="VscNewFile" title="New Design" {...iconParams} onClick={() => this.newDesign()}/>
-        <div className="icon-separator">&nbsp;</div>
+        <IconSeparator/>
         <Icon type="GrClone" title="Clone Design" {...iconParams} onClick={() => this.cloneDesign()}/>
         <Icon type="AiOutlineSetting" title="Settings" {...iconParams} onClick={() => this.settings()}/>
         <Icon type="AiOutlineCloseCircle" title="Delete Design" {...iconParams} onClick={() => this.deleteDesign()}/>
 
         {/*<Icon type="GrPowerReset" onClick={() => this.resetModel()}/>*/}
-        <div className="icon-separator">&nbsp;</div>
+        <IconSeparator/>
         <Icon type="GiWireframeGlobe" title="Wireframes" {...iconParams} selected={wireframes} onClick={() => this.setState({ wireframes: !wireframes })} />
         <Icon type="CgEditShadows" title="Flat Shading" {...iconParams} selected={flatShading} onClick={() => this.setState({ flatShading: !flatShading })}/>
         <Icon type="AiOutlineExport" title="Export STL" {...iconParams} onClick={() => this.exportSTL()}/>

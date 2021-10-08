@@ -1,11 +1,11 @@
 import * as React from "react"
 import { IconBaseProps } from "react-icons";
 import { CgEditShadows } from "react-icons/cg";
-import { GiWireframeGlobe } from "react-icons/gi";
+import { GiWireframeGlobe, GiCartwheel } from "react-icons/gi";
 import { GrPowerReset, GrClone } from "react-icons/gr";
 import { VscNewFile } from "react-icons/vsc";
 import { AiOutlineExport, AiOutlineSetting, AiOutlineInfoCircle, AiOutlineCloseCircle, AiOutlineWarning, AiOutlineBorderTop, AiOutlineBorderBottom, AiOutlineFullscreen } from "react-icons/ai";
-import { ImMoveUp, ImMoveDown } from "react-icons/im"
+import { ImMoveUp, ImMoveDown, ImPencil2 } from "react-icons/im"
 import { GiWhiplash } from "react-icons/gi"
 
 import { Tools } from "../../lib";
@@ -30,16 +30,21 @@ export type iconType =
     "AiOutlineFullscreen" |
     "AiOutlineSetting" |
     "AiOutlineExport" | 
-    "GiWhiplash"
+    "GiWhiplash" |
+    "ImPencil2" |
+    "GiCartwheel"
     ;
 
-export interface IIconProps {
+export interface IIconElementProps {
+    size?: iconSize;
+    className?: string;    
+}
+
+export interface IIconProps extends IIconElementProps {
     type: iconType;
     title?: string;
-    size?: iconSize;
     selected?: boolean;
     bordered?: boolean;
-    className?: string;
     onClick?: () => void;
 }
 
@@ -78,6 +83,8 @@ export class Icon extends React.Component<IIconProps> {
             case "AiOutlineSetting": return <AiOutlineSetting {...iconProps}/>
             case "AiOutlineExport": return <AiOutlineExport {...iconProps}/>
             case "GiWhiplash": return <GiWhiplash {...iconProps}/>
+            case "ImPencil2": return <ImPencil2 {...iconProps}/>
+            case "GiCartwheel": return <GiCartwheel {...iconProps}/>
             default: return null;
         }
     }
@@ -89,4 +96,20 @@ export class Icon extends React.Component<IIconProps> {
             </div>
         )
     }
+}
+
+export const IconSeparator = (props: IIconElementProps) => {
+    const { size, className } = props;
+    const classNames: {[key: string]: boolean} = {
+        "icon-separator": true,
+        [`icon-${size}`]: true
+    };
+
+    if (className) classNames[className] = true;
+
+    return (
+        <div className="icon-container">
+            <div className={Tools.classNames(classNames)}>&nbsp;</div>
+        </div>
+    )
 }
