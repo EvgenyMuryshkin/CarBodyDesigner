@@ -13,6 +13,7 @@ import { BodyShape } from './BodyShape';
 import { generationParity } from './SidePlane';
 import * as THREE from "three";
 import { MathUtils } from 'three';
+import { wheelDrawingType } from './components/drawing-model';
 
 interface IState {
   storageModel: IStorageModel;
@@ -46,7 +47,8 @@ export class App extends React.Component<{}, IState> {
       frontPoints,
       topPoints,
       colorOdd: 0xEB7D09,
-      colorEven: 0x000000
+      colorEven: 0x000000,
+      wheels: []
     }
   }
 
@@ -94,7 +96,7 @@ export class App extends React.Component<{}, IState> {
     const { currentDesign, wireframes, flatShading } = this.state;
     if (!currentDesign) return null;
 
-    const { boxSize, frontPoints, sidePoints, topPoints, colorOdd, colorEven } = currentDesign;
+    const { boxSize, frontPoints, sidePoints, topPoints, colorOdd, colorEven, wheels } = currentDesign;
 
     const canvasWidth = 700;
     const canvasHeight = 300;
@@ -124,6 +126,8 @@ export class App extends React.Component<{}, IState> {
                     frontPoints: newPoints
                   })
                 }}
+                wheels={null}
+                wheelDrawing={wheelDrawingType.None}
               />
             </td>
             <td>
@@ -134,11 +138,14 @@ export class App extends React.Component<{}, IState> {
                 height={canvasHeight}
                 samples={topPoints}
                 maxY={boxSize.y}
-                onChange={(newPoints) => {
+                onChange={(newPoints, newWheels) => {
                   modifyDesign({
-                    topPoints: newPoints
+                    topPoints: newPoints,
+                    wheels: newWheels || [] 
                   })
                 }}
+                wheels={wheels}
+                wheelDrawing={wheelDrawingType.Top}
               />
             </td>
           </tr>
@@ -151,11 +158,14 @@ export class App extends React.Component<{}, IState> {
                 height={canvasHeight}
                 samples={sidePoints}
                 maxY={boxSize.z}
-                onChange={(newPoints) => {
+                onChange={(newPoints, newWheels) => {
                   modifyDesign({
-                    sidePoints: newPoints
+                    sidePoints: newPoints,                    
+                    wheels: newWheels || []
                   })
                 }}
+                wheels={wheels}
+                wheelDrawing={wheelDrawingType.Side}
               />
             </td>
             <td>
@@ -168,6 +178,7 @@ export class App extends React.Component<{}, IState> {
                 flatShading={flatShading}
                 colorEven={colorEven}
                 colorOdd={colorOdd}
+                wheels={wheels}
               />
               </td>
           </tr>
@@ -259,10 +270,10 @@ export class App extends React.Component<{}, IState> {
 
     if (!params) return;
 
-    const { boxSize, topPoints, frontPoints, sidePoints } = currentDesign;
+    const { boxSize, topPoints, frontPoints, sidePoints, wheels } = currentDesign;
     const exporter = new STLExporter();
     const bodyShape = new BodyShape(boxSize.x, boxSize.y, boxSize.z, generationParity.All);
-    bodyShape.apply(sidePoints, frontPoints, topPoints );
+    bodyShape.apply(sidePoints, frontPoints, topPoints, wheels );
     const singleGeometry = mergeBufferGeometries(bodyShape.geometry);
     
     singleGeometry.rotateX(MathUtils.degToRad(params.intXRotationDeg));

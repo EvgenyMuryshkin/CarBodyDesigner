@@ -1,5 +1,6 @@
 import { BufferGeometry } from "three";
-import { IPoint2D, IPoint3D } from "./lib";
+import { IWheelModel } from "./components/drawing-model";
+import { IPoint2D, IPoint3D, Tools } from "./lib";
 import { generationMode, generationParity, SidePlane } from "./SidePlane";
 
 export class BodyShape {
@@ -97,7 +98,8 @@ export class BodyShape {
     public apply(
         sidePoints: IPoint2D[],
         frontPoints: IPoint2D[],
-        topPoints: IPoint2D[]
+        topPoints: IPoint2D[],
+        wheels: IWheelModel[]
     ) {
         const { lengthPoints, widthPoints, heightPoints } = this;
 
@@ -111,10 +113,23 @@ export class BodyShape {
             const zScale = topPoints[l].y / widthPoints;
 
             p.handlers = [(p) => {
-                return {
-                    x: p.x,
-                    y: p.y * yScale * frontScale,
-                    z: offsetScale(p.z, this.halfWidth, zScale)
+                const wheel = wheels.find(w => Tools.betweenInclusive(p.x, w.center.x - w.arcRadius, w.center.x + w.arcRadius));
+
+                if (wheel) {
+                    const wheelHeight = Tools.pythHB(wheel.arcRadius, wheel.center.x - p.x );
+                    const y = Math.max(wheel.center.y + wheelHeight, p.y * yScale * frontScale);
+                    return {
+                        x: p.x,
+                        y: y,//p.y * yScale * frontScale,
+                        z: offsetScale(p.z, this.halfWidth, zScale)
+                    }
+                }
+                else {
+                    return {
+                        x: p.x,
+                        y: p.y * yScale * frontScale,
+                        z: offsetScale(p.z, this.halfWidth, zScale)
+                    }
                 }
             }]
         });
@@ -125,10 +140,23 @@ export class BodyShape {
             const zScale = topPoints[l].y / widthPoints;
 
             p.handlers = [(p) => {
-                return {
-                    x: p.x,
-                    y: p.y * yScale * frontScale,
-                    z: offsetScale(p.z, this.halfWidth, zScale)
+                const wheel = wheels.find(w => Tools.betweenInclusive(p.x, w.center.x - w.arcRadius, w.center.x + w.arcRadius));
+
+                if (wheel) {
+                    const wheelHeight = Tools.pythHB(wheel.arcRadius, wheel.center.x - p.x );
+                    const y = Math.max(wheel.center.y + wheelHeight, p.y * yScale * frontScale);
+                    return {
+                        x: p.x,
+                        y: y,//p.y * yScale * frontScale,
+                        z: offsetScale(p.z, this.halfWidth, zScale)
+                    }
+                }
+                else {
+                    return {
+                        x: p.x,
+                        y: p.y * yScale * frontScale,
+                        z: offsetScale(p.z, this.halfWidth, zScale)
+                    }
                 }
             }]
         });
@@ -152,11 +180,32 @@ export class BodyShape {
             const yScale = sidePoints[l].y / heightPoints;
             const zScale = topPoints[l].y / widthPoints;
 
-            p.handlers = [(p) => {
-                return {
-                    x: p.x,
-                    y: p.y * yScale * frontScale,
-                    z: offsetScale(p.z, this.halfWidth, zScale)
+            p.handlers = [(p, allPoints) => {
+                const wheel = wheels.find(w => Tools.betweenInclusive(p.x, w.center.x - w.arcRadius, w.center.x + w.arcRadius));
+
+                const translate = (p: IPoint3D): IPoint3D => {
+                    return {
+                        x: p.x,
+                        y: p.y * yScale * frontScale,
+                        z: offsetScale(p.z, this.halfWidth, zScale)
+                    }
+                }
+
+                if (wheel) {
+                    const wheelHeight = Tools.pythHB(wheel.arcRadius, wheel.center.x - p.x );
+
+                    const y = Tools.betweenInclusive(p.z, this.halfWidth - wheel.offset, this.halfWidth + wheel.offset)
+                        ? p.y * yScale * frontScale
+                        : wheel.center.y + wheelHeight;
+
+                    return {
+                        x: p.x,
+                        y: y,
+                        z: offsetScale(p.z, this.halfWidth, zScale)
+                    }         
+                }
+                else {
+                    return translate(p);
                 }
             }]
         });

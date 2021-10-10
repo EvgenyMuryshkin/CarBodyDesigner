@@ -1,7 +1,7 @@
 import * as React from "react"
 import { IPoint2D } from "../../lib";
 import { DrawingCanvas, IDrawingCanvasProps } from "../drawing-canvas/drawing-canvas";
-import { drawingMode, IWheelModel } from "../drawing-model";
+import { drawingMode } from "../drawing-model";
 import { Icon, IconSeparator, IIconProps } from "../icon/icon";
 import { Dialogs } from "../modal/modal";
 import { ModalSideEditor } from "./modal-side-editor";
@@ -13,7 +13,6 @@ export interface ISideEditorProps extends IDrawingCanvasProps {
 
 interface IState {
     mode: drawingMode;
-    wheel: IWheelModel | null;
 }
 
 export class SideEditor extends React.Component<ISideEditorProps, IState> {
@@ -21,56 +20,59 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
         super(props);
         this.state = {
             mode: drawingMode.Contour,
-            wheel: null
         }
     }
 
     moveUp() {
-        const { maxY, onChange } = this.props;
+        const { maxY, wheels, onChange } = this.props;
         const samples = [...this.props.samples];
         if (samples.some(s => s.y > maxY - 1)) return;
         samples.forEach(s => s.y++);
-        onChange(samples);
+        onChange(samples, wheels);
     }
 
     moveDown() {
-        const { onChange } = this.props;
+        const { wheels, onChange } = this.props;
         const samples = [...this.props.samples];
         if (samples.some(s => s.y < 1)) return;
         samples.forEach(s => s.y--);
-        onChange(samples);
+        onChange(samples, wheels);
     }
     
     allUp() {
-        const { maxY, onChange } = this.props;
+        const { maxY, wheels, onChange } = this.props;
         const samples = [...this.props.samples];
         samples.forEach(s => s.y = maxY);
-        onChange(samples);
+        onChange(samples, wheels);
 
     }
 
     allDown() {
-        const { onChange } = this.props;
+        const { wheels, onChange } = this.props;
         const samples = [...this.props.samples];
         samples.forEach(s => s.y = 0);
-        onChange(samples);
+        onChange(samples, wheels);
     }
 
     async fullscreenEdit() {
-        const { title, onChange } = this.props;
-        let newSamples = null;
+        const { title, samples, wheels, onChange } = this.props;
+        let newSamples = samples;
+        let newWheels = wheels;
 
         if (await Dialogs.Modal({
             title: title,
-            body: <ModalSideEditor {...this.props} onChange={(s) => newSamples = s} />,
+            body: <ModalSideEditor {...this.props} onChange={(s, w) => {
+                newSamples = s;
+                newWheels = w;
+            }}/>,
             buttonsFactory: Dialogs.OKCancelButtons
         })) {
-            if (newSamples) onChange(newSamples)
+            onChange(newSamples, newWheels);
         }
     }
 
     smooth() {
-        const { onChange, samples } = this.props;
+        const { onChange, samples, wheels } = this.props;
         const newSamples = samples
         .map((s, idx): IPoint2D => {
             if (idx === 0 || idx === samples.length - 1) return s;
@@ -79,11 +81,11 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
                 y: (samples[idx-1].y + samples[idx].y + samples[idx + 1].y) / 3
             }
         });
-        onChange(newSamples);
-        console.log(samples, newSamples);
+        onChange(newSamples, wheels);
     }
 
     renderMenu() {
+        const { wheels } = this.props;
         const { mode } = this.state;
         const iconParams: Partial<IIconProps> = {
             bordered: true,
@@ -95,7 +97,7 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
                 <Icon type="AiOutlineFullscreen" title="Fullscreen edit" {...iconParams} onClick={async () => await this.fullscreenEdit()}/>
                 <IconSeparator {...iconParams}/>
                 <Icon type="ImPencil2" title="Draw countour" {...iconParams} selected={mode === drawingMode.Contour} onClick={() => this.setState({ mode: drawingMode.Contour })}/>   
-                <Icon type="GiCartwheel" title="Draw wheel" {...iconParams} selected={mode === drawingMode.Wheel} onClick={() => this.setState({ mode: drawingMode.Wheel, wheel: null })}/>
+                {wheels && <Icon type="GiCartwheel" title="Draw wheel" {...iconParams} selected={mode === drawingMode.Wheel} onClick={() => this.setState({ mode: drawingMode.Wheel })}/>}
                 <IconSeparator {...iconParams}/>
                 <Icon type="ImMoveUp" title="Move Up" {...iconParams} onClick={() => this.moveUp()}/>
                 <Icon type="ImMoveDown" title="Move Up" {...iconParams} onClick={() => this.moveDown()}/>
@@ -107,8 +109,8 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
     }
     
     render() {
-        const { title, width, height, maxY, symmetrical, samples, onChange} = this.props;
-        const { mode, wheel } = this.state;
+        const { title, width, height, maxY, symmetrical, samples, onChange, wheels, wheelDrawing } = this.props;
+        const { mode } = this.state;
 
         return (
             <div className="side-editor">
@@ -123,8 +125,8 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
                         maxY={maxY}
                         mode={mode}
                         onChange={onChange}
-                        wheel={wheel}
-                        onWheelChange={wheel => this.setState({ wheel: wheel })}
+                        wheels={wheels}
+                        wheelDrawing={wheelDrawing}
                     />
                 </div>
             </div>

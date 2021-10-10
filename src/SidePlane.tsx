@@ -23,7 +23,7 @@ export interface ISidePlaneProps {
     log?: boolean;
 }
 
-export type pointMapper = (p: IPoint3D) => IPoint3D;
+export type pointMapper = (p: IPoint3D, allPoints: IPoint3D[]) => IPoint3D;
 
 export interface IVerticeData {
     vertice: IPoint3D;
@@ -236,10 +236,12 @@ export class SidePlane {
         const r = new BufferGeometry();
 
         const points: number[] = [];
+        const allPoints = vertices.map(v => v.vertice);
+
         vertices.forEach(v => {
             let p = v.vertice;
             v.handlers.forEach(h => {
-                p = h(p);
+                p = h(p, allPoints);
             });
             points.push(p.x * scale, p.y * scale, p.z * scale);
         });

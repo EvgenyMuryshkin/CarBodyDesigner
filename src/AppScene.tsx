@@ -6,6 +6,7 @@ import { IPoint2D, IPoint3D } from "./lib";
 import { Vector3 } from "three";
 import { generationParity } from "./SidePlane";
 import { Subject, debounce, Subscription, interval } from "rxjs";
+import { IWheelModel } from "./components/drawing-model";
 // https://dustinpfister.github.io/2018/04/13/threejs-orbit-controls/
 // https://stackoverflow.com/questions/2368784/draw-on-html5-canvas-using-a-mouse
 // https://threejs.org/docs/#examples/en/controls/OrbitControls
@@ -19,6 +20,7 @@ export interface IProps {
     flatShading: boolean;
     colorOdd: number;
     colorEven: number;
+    wheels: IWheelModel[];
 }
 
 interface IState {
@@ -77,7 +79,17 @@ export class AppScene extends React.Component<IProps, IState> {
 
         this.bodyMesh = [];
 
-        const { bodyPoints, sidePoints, frontPoints, topPoints, wireframes, flatShading, colorOdd, colorEven } = this.props;
+        const { 
+            bodyPoints, 
+            sidePoints, 
+            frontPoints, 
+            topPoints, 
+            wireframes, 
+            flatShading, 
+            colorOdd, 
+            colorEven,
+            wheels
+        } = this.props;
 
         const wireframesColor = 0x00FF00;
         
@@ -88,7 +100,7 @@ export class AppScene extends React.Component<IProps, IState> {
 
         for (const p of parts) {
             const body = new BodyShape(bodyPoints.x, bodyPoints.y, bodyPoints.z, p.parity);
-            body.apply(sidePoints, frontPoints, topPoints );
+            body.apply(sidePoints, frontPoints, topPoints, wheels);
             //const material = new THREE.MeshBasicMaterial( { color: 0xffff00, wireframe: true } );
             //const material = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
             const material = new THREE.MeshPhongMaterial({ 
@@ -138,7 +150,7 @@ export class AppScene extends React.Component<IProps, IState> {
         this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
         this.orbitControls.target.set( 0, 25, 0 );
         this.orbitControls.update();
-        
+
         this.scene.add( new THREE.AmbientLight( 0x777777 ) );
 
         this.light = new THREE.DirectionalLight( 0xdfebff, 1 );

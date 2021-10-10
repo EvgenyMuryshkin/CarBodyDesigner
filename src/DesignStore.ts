@@ -1,3 +1,4 @@
+import { IWheelModel } from "./components/drawing-model";
 import { IPoint2D, IPoint3D } from "./lib";
 
 export interface IDesign {
@@ -8,6 +9,7 @@ export interface IDesign {
     topPoints: IPoint2D[];
     colorOdd: number;
     colorEven: number;
+    wheels: IWheelModel[];
 }
   
 export interface IStorageModel {
@@ -19,7 +21,16 @@ export class DesignStore {
         const json = localStorage.getItem("Designs");
         if (!json) return { designs: [] }
     
-        return JSON.parse(json) as IStorageModel;
+        const model = JSON.parse(json) as IStorageModel;
+        model.designs.forEach(d => {
+            if (!d.wheels) d.wheels = [];
+            d.wheels.forEach(w => {
+                if (!w.offset) w.offset = 10;
+                if (!w.width) w.width = 10;
+            })
+        });
+        
+        return model;
     }
 
     static saveStorageModel(model: IStorageModel) {

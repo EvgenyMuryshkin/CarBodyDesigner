@@ -1,5 +1,6 @@
 import * as React from "react"
-import { IPoint2D } from "../../lib";
+import { IPoint2D, Tools } from "../../lib";
+import { IWheelModel } from "../drawing-model";
 import { ISideEditorProps, SideEditor } from "./side-editor";
 import "./side-editor.scss";
 
@@ -9,6 +10,7 @@ interface IProps extends ISideEditorProps {
 
 interface IState {
     samples: IPoint2D[];
+    wheels: IWheelModel[] | null;
 }
 
 export class ModalSideEditor extends React.Component<IProps, IState> {
@@ -18,20 +20,22 @@ export class ModalSideEditor extends React.Component<IProps, IState> {
         super(props);
 
         this.state = {
-            samples: []
+            samples: [],
+            wheels: null
         }
     }
 
     componentDidMount() {
-        const { samples } = this.props;
+        const { samples, wheels } = this.props;
         this.setState({
-            samples: samples.map((s): IPoint2D => ({ x: s.x, y: s.y }))
+            samples: samples.map((s): IPoint2D => ({ x: s.x, y: s.y })),
+            wheels: wheels ? wheels.map(w => Tools.clone(w)) : null
         })
     }
 
     render() {
-        const { title, symmetrical, maxY, onChange} = this.props;
-        const { samples } = this.state;
+        const { title, symmetrical, maxY, onChange, wheelDrawing} = this.props;
+        const { samples, wheels } = this.state;
 
         const width = (this._container?.clientWidth ?? 0) * 0.9;
         const height = (this._container?.clientHeight ?? 0) * 0.9;
@@ -46,12 +50,15 @@ export class ModalSideEditor extends React.Component<IProps, IState> {
                     height={height}
                     samples={samples} 
                     maxY={maxY}
-                    onChange={(newSamples) => {
+                    onChange={(newSamples, newWheels) => {
                         this.setState({
-                            samples: newSamples
+                            samples: newSamples,
+                            wheels: newWheels
                         }, 
-                        () => onChange(this.state.samples))
+                        () => onChange(this.state.samples, this.state.wheels))
                     }}
+                    wheels={wheels}
+                    wheelDrawing={wheelDrawing}
                 /> : null
                 }
             </div>

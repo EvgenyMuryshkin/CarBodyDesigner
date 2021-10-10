@@ -2,28 +2,39 @@ import React from "react";
 import { Component } from "react";
 import { BufferStream, Generate, IPoint2D } from "../../lib";
 import { Tools } from "../../lib/tools";
-import { drawingMode, IWheelModel } from "../drawing-model";
+import { drawingMode, IWheelModel, wheelDrawingType } from "../drawing-model";
 import "./drawing-canvas.scss";
 
 export interface IDrawingCanvasProps {
     symmetrical: boolean;
     height: number;
     width: number;
-    samples: IPoint2D[];
     maxY: number;
-    onChange: (samples: IPoint2D[]) => void;
+    samples: IPoint2D[];
+    wheelDrawing: wheelDrawingType;
+    wheels: IWheelModel[] | null;
+    onChange: (samples: IPoint2D[], wheels: IWheelModel[] | null) => void;
 }
 
 enum wheelDrawingMode {
     Create,
     MoveCenter,
-    ChangeRadius
+    ChangeRadius,
+    ChangeWidth,
+    ChangeOffset
+}
+
+interface IWheelData {
+    wheel: IWheelModel | null;
+    wheelIndex: number;
+    distToCenter: number;
+    distToRadiusHandler: number;
+    distToOffsetHandler: number;
+    distToWidthHandler: number;
 }
 
 interface IProps extends IDrawingCanvasProps{
     mode: drawingMode;
-    wheel: IWheelModel | null;
-    onWheelChange: (wheel: IWheelModel) => void;
 }
 
 interface IState {
@@ -32,6 +43,7 @@ interface IState {
     //height: number;
     scale: number;
     wheelMode: wheelDrawingMode;
+    wheelIndex: number;
 }
 
 export class DrawingCanvas extends Component<IProps, IState> {
@@ -53,7 +65,8 @@ export class DrawingCanvas extends Component<IProps, IState> {
             //height: props.height,
             scale: scale,
             margin: 25,
-            wheelMode: wheelDrawingMode.Create
+            wheelMode: wheelDrawingMode.Create,
+            wheelIndex: -1
         }
 
         this.onMouseUp = this.onMouseUp.bind(this);
@@ -73,7 +86,14 @@ export class DrawingCanvas extends Component<IProps, IState> {
         this.enabled = false;
         this.lastPoint = null;
         this.setState({
-            wheelMode: wheelDrawingMode.Create
+            wheelMode: wheelDrawingMode.Create,
+            wheelIndex: -1
+        }, () => {
+            const { samples, wheels, onChange } = this.props;
+            if (wheels) {
+                const validWheels = wheels.filter(w => w.arcRadius > 2);
+                onChange(samples, validWheels);     
+            }
         });
     }
 
@@ -152,6 +172,125 @@ export class DrawingCanvas extends Component<IProps, IState> {
         }
     }
 
+    drawWheelSide(ctx: CanvasRenderingContext2D, wheel: IWheelModel) {
+        const { margin, scale } = this.state;
+
+        const center = this.translate(this.scalePoint(wheel.center));
+        const wheelArcFrontFrom = this.translate(this.scalePoint({ x: wheel.center.x - wheel.wheelRadius, y: wheel.center.y }));
+        const wheelArcFrontTo = this.translate(this.scalePoint({ x: wheel.center.x - wheel.wheelRadius, y: 0 }));
+
+        const wheelArcBackFrom = this.translate(this.scalePoint({ x: wheel.center.x + wheel.wheelRadius, y: wheel.center.y }));
+        const wheelArcBackTo = this.translate(this.scalePoint({ x: wheel.center.x + wheel.wheelRadius, y: 0 }));
+
+        const wheelRadiusHandle = this.translate(this.scalePoint({ x: wheel.center.x, y: wheel.center.y + wheel.wheelRadius }));
+
+        ctx.beginPath();
+        ctx.arc(
+            margin + center.x, 
+            margin + center.y,
+            wheel.wheelRadius * scale,
+            Math.PI, 
+            2 * Math.PI
+        );
+
+        ctx.moveTo(margin + wheelArcFrontFrom.x, margin + wheelArcFrontFrom.y);
+        ctx.lineTo(margin + wheelArcFrontTo.x, margin + wheelArcFrontTo.y);
+
+        ctx.moveTo(margin + wheelArcBackFrom.x, margin + wheelArcBackFrom.y);
+        ctx.lineTo(margin + wheelArcBackTo.x, margin + wheelArcBackTo.y);
+
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(
+            margin + center.x, 
+            margin + center.y,
+            5,
+            0,
+            2 * Math.PI,
+        )
+
+        ctx.arc(
+            margin + wheelRadiusHandle.x, 
+            margin + wheelRadiusHandle.y,
+            5,
+            0,
+            2 * Math.PI,
+        )
+        ctx.fill();
+    }
+
+    drawWheelTop(ctx: CanvasRenderingContext2D, wheel: IWheelModel) {
+        const { margin } = this.state;
+
+        const innerCenter = this.translate(this.scalePoint({
+            x: wheel.center.x,
+            y: 2 * wheel.offset
+        }));
+        const outerCenter = this.translate(this.scalePoint({
+            x: wheel.center.x,
+            y: 2 * (wheel.offset + wheel.width)
+        }));        
+
+        const wheelContour: IPoint2D[] = [
+            {
+                x: wheel.center.x - wheel.wheelRadius,
+                y: 2 * wheel.offset
+            },
+            {
+                x: wheel.center.x + wheel.wheelRadius,
+                y: 2 * wheel.offset
+            },
+            {
+                x: wheel.center.x + wheel.wheelRadius,
+                y: 2 * (wheel.offset + wheel.width)
+            },
+            {
+                x: wheel.center.x - wheel.wheelRadius,
+                y: 2 * (wheel.offset + wheel.width)
+            },
+        ];
+
+        const mappedWheelCountour = wheelContour.map(p => this.translate(this.scalePoint(p)));
+ 
+        ctx.beginPath();
+        ctx.moveTo(margin + mappedWheelCountour[3].x, margin + mappedWheelCountour[3].y);
+        mappedWheelCountour.forEach((p, idx) => {
+            ctx.lineTo(margin + p.x, margin + p.y);
+        })
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(
+            margin + innerCenter.x, 
+            margin + innerCenter.y,
+            5,
+            0,
+            2 * Math.PI,
+        )
+
+        ctx.arc(
+            margin + outerCenter.x, 
+            margin + outerCenter.y,
+            5,
+            0,
+            2 * Math.PI,
+        )
+        ctx.fill();
+    }
+
+    drawWheels(ctx: CanvasRenderingContext2D) {
+        const { wheels, wheelDrawing } = this.props;
+
+        for (const wheel of wheels || []) {
+            switch (wheelDrawing) {
+                case wheelDrawingType.None: break;
+                case wheelDrawingType.Side: this.drawWheelSide(ctx, wheel); break;
+                case wheelDrawingType.Top: this.drawWheelTop(ctx, wheel); break;
+            }
+        }
+    }
+
     drawSignal() {
         const { canvas } = this;
         if (!canvas) return;
@@ -179,51 +318,7 @@ export class DrawingCanvas extends Component<IProps, IState> {
 
         ctx.stroke();
 
-        const { wheel } = this.props;
-        const { scale } = this.state;
-        if (wheel) {
-            const center = this.translate(this.scalePoint(wheel.center));
-            const wheelArcFrontFrom = this.translate(this.scalePoint({ x: wheel.center.x - wheel.wheelRadius, y: wheel.center.y }));
-            const wheelArcFrontTo = this.translate(this.scalePoint({ x: wheel.center.x - wheel.wheelRadius, y: 0 }));
-
-            const wheelArcBackFrom = this.translate(this.scalePoint({ x: wheel.center.x + wheel.wheelRadius, y: wheel.center.y }));
-            const wheelArcBackTo = this.translate(this.scalePoint({ x: wheel.center.x + wheel.wheelRadius, y: 0 }));
-
-            ctx.beginPath();
-            ctx.arc(
-                margin + center.x, 
-                margin + center.y,
-                wheel.wheelRadius * scale,
-                Math.PI, 
-                2 * Math.PI
-            );
-
-            ctx.moveTo(margin + wheelArcFrontFrom.x, margin + wheelArcFrontFrom.y);
-            ctx.lineTo(margin + wheelArcFrontTo.x, margin + wheelArcFrontTo.y);
-
-            ctx.moveTo(margin + wheelArcBackFrom.x, margin + wheelArcBackFrom.y);
-            ctx.lineTo(margin + wheelArcBackTo.x, margin + wheelArcBackTo.y);
-
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.arc(
-                margin + center.x, 
-                margin + center.y,
-                5,
-                0,
-                2 * Math.PI,
-            )
-
-            ctx.arc(
-                margin + wheelArcFrontFrom.x, 
-                margin + wheelArcFrontFrom.y,
-                5,
-                0,
-                2 * Math.PI,
-            )
-            ctx.fill();
-        }
+        this.drawWheels(ctx);
     }
 
     lerp(samples: IPoint2D[], from: IPoint2D, to: IPoint2D) {
@@ -249,7 +344,7 @@ export class DrawingCanvas extends Component<IProps, IState> {
     }
 
     processPoints(points: IPoint2D[]) {
-        const { symmetrical, onChange } = this.props;
+        const { symmetrical, wheels, onChange } = this.props;
         const samples = [...this.props.samples];
 
         const halfIndex = (samples.length - 1) / 2;
@@ -288,11 +383,88 @@ export class DrawingCanvas extends Component<IProps, IState> {
         }
 
         this.drawSignal();
-        onChange(samples);
+        onChange(samples, wheels);
     }
 
+    onWheelChange(wheel: IWheelModel, wheelIndex: number) {
+        const { samples, wheels, onChange } = this.props;
+        if (!wheels ) return;
+
+        if (wheelIndex === -1) {
+            this.setState({
+                wheelIndex: wheels.length
+            }, () => {
+                onChange(samples, [...wheels, wheel])
+            })
+        }
+        else {
+            this.setState({
+                wheelIndex: wheelIndex
+            }, () => {
+                onChange(samples, wheels.map((w, idx) => idx === wheelIndex ? wheel : w))
+            })
+        }
+    }
+
+    wheelDataFromPoint(pt: IPoint2D, wheel: IWheelModel): IWheelData {
+        const { wheels } = this.props;
+
+        const distToCenter = Math.sqrt(
+            Math.pow(pt.x - wheel.center.x, 2) + 
+            Math.pow(pt.y - wheel.center.y, 2),
+        );
+
+        const distToRadiusHandler = Math.sqrt(
+            Math.pow(pt.x - wheel.center.x, 2) + 
+            Math.pow(pt.y - (wheel.center.y + wheel.wheelRadius), 2),
+        );
+
+        const distToOffsetHandler = Tools.pythBP(pt.x - wheel.center.x, pt.y - 2 * wheel.offset);
+        const distToWidthHandler = Tools.pythBP(pt.x - wheel.center.x, pt.y - 2 * (wheel.offset + wheel.width ));
+
+        return {
+            wheel,
+            wheelIndex: (wheels || []).indexOf(wheel),
+            distToCenter,
+            distToRadiusHandler,
+            distToOffsetHandler,
+            distToWidthHandler
+        }
+    }
+
+    wheelIndexFromPoint(pt: IPoint2D): IWheelData {
+        const { wheels } = this.props;
+        const { wheelIndex } = this.state;
+
+        if (wheels && wheels[wheelIndex]) return this.wheelDataFromPoint(pt, wheels[wheelIndex]);
+
+        for (const wheel of wheels || []) {
+            const wheelData = this.wheelDataFromPoint(pt, wheel);
+
+            const distances = [
+                wheelData.distToCenter,
+                wheelData.distToRadiusHandler,
+                wheelData.distToOffsetHandler,
+                wheelData.distToWidthHandler
+            ]
+
+            if (distances.some(d => d < 2)) {
+                return wheelData;
+            }
+        }
+
+        return {
+            wheel: null,
+            wheelIndex: -1,
+            distToCenter: 0,
+            distToRadiusHandler: 0,
+            distToOffsetHandler: 0,
+            distToWidthHandler: 0
+        }
+    };
+
     setPosition(e: React.MouseEvent<HTMLCanvasElement>) {
-        const { samples, maxY, mode } = this.props;
+        const { samples, maxY, mode, wheelDrawing } = this.props;
         const { scale, margin, wheelMode } = this.state;
         if (!this.canvas) return;
         e.stopPropagation();
@@ -307,70 +479,115 @@ export class DrawingCanvas extends Component<IProps, IState> {
         pt.x = Tools.withinRange(Math.round(pt.x / scale), 0, samples.length - 1);
         pt.y = Tools.withinRange(pt.y / scale, 0, maxY);
 
-        switch (mode) {
-            case drawingMode.Contour: this.buffer?.next(pt); break;
-            case drawingMode.Wheel: {
-                const { wheel, onWheelChange } = this.props;
+        const wheelData = this.wheelIndexFromPoint(pt);
 
-                const distToCenter = wheel ? Math.sqrt(
-                    Math.pow(pt.x - wheel.center.x, 2) + 
-                    Math.pow(pt.y - wheel.center.y, 2),
-                ) : 0;
+        const { wheel, wheelIndex, distToCenter, distToRadiusHandler, distToOffsetHandler, distToWidthHandler } = wheelData;
 
-                const distToRadiusHandler = wheel ? Math.sqrt(
-                    Math.pow(pt.x - (wheel.center.x - wheel.wheelRadius), 2) + 
-                    Math.pow(pt.y - wheel.center.y, 2),
-                ) : 0;
+        if (mode === drawingMode.Contour && !wheel) {
+            this.buffer?.next(pt);
+            return;
+        }
+        else if (mode === drawingMode.Wheel || (mode === drawingMode.Contour && wheel)) {
+            const { wheels } = this.props;
 
-                if (wheel) {
-                    pt.x = Tools.withinRange(pt.x, wheel.wheelRadius, samples.length - 1 - wheel.wheelRadius); 
-                    pt.y = Tools.withinRange(pt.y, 0, maxY - wheel.wheelRadius); 
+            if (!wheels) return;
+
+            if (wheel) {
+                switch (wheelDrawing) {
+                    case wheelDrawingType.Side: {
+                        pt.x = Tools.withinRange(pt.x, wheel.wheelRadius, samples.length - 1 - wheel.wheelRadius); 
+                        pt.y = Tools.withinRange(pt.y, 0, maxY - wheel.wheelRadius); 
+                    } break;
+                    case wheelDrawingType.Top: {
+                        pt.x = Tools.withinRange(pt.x, wheel.wheelRadius, samples.length - 1 - wheel.wheelRadius); 
+                        pt.y = Tools.withinRange(pt.y, 0, maxY); 
+                    }
                 }
+            }
 
-                switch (wheelMode) {
-                    case wheelDrawingMode.MoveCenter: {
-                        if (wheel) {
-                            onWheelChange({
-                                center: pt,
-                                arcRadius: wheel.arcRadius,
-                                wheelRadius: wheel.wheelRadius
-                            });
-                        }
-                    } break;
-                    case wheelDrawingMode.ChangeRadius: {
-                        if (wheel) {
-                            onWheelChange({
-                                center: wheel.center,
-                                arcRadius: distToCenter,
-                                wheelRadius: distToCenter
-                            });
-                        }
-                    } break;
-                    case wheelDrawingMode.Create: {
-                        if (wheel && distToCenter < 3) {
-                            this.setState({
-                                wheelMode: wheelDrawingMode.MoveCenter
-                            })
-                        }
-                        else if (wheel && distToRadiusHandler < 3) {
-                            this.setState({
-                                wheelMode: wheelDrawingMode.ChangeRadius
-                            }) 
-                        }
-                        else {
-                            this.setState({
-                                wheelMode: wheelDrawingMode.ChangeRadius,
-                            }, () => {
-                                onWheelChange({
-                                    center: pt,
-                                    arcRadius: 0,
-                                    wheelRadius: 0
-                                });
-                            })
-                        }
-                    } break;
-                }
-            } break;
+            switch (wheelMode) {
+                case wheelDrawingMode.MoveCenter: {
+                    if (wheel) {
+                        this.onWheelChange({
+                            ...wheel,
+                            center: pt,
+                        }, wheelIndex);
+                    }
+                } break;
+                case wheelDrawingMode.ChangeRadius: {
+                    if (wheel) {
+                        this.onWheelChange({
+                            ...wheel,
+                            arcRadius: distToCenter,
+                            wheelRadius: distToCenter
+                        }, wheelIndex);
+                    }
+                } break;
+                case wheelDrawingMode.ChangeOffset: {
+                    if (wheel) {
+                        this.onWheelChange({
+                            ...wheel,
+                            offset: pt.y / 2
+                        }, wheelIndex);
+                    }
+                } break;
+                case wheelDrawingMode.ChangeWidth: {
+                    if (wheel) {
+                        this.onWheelChange({
+                            ...wheel,
+                            width: (pt.y / 2) - wheel.offset
+                        }, wheelIndex);
+                    }
+                } break;
+                case wheelDrawingMode.Create: {
+                    switch (wheelDrawing) {
+                        case wheelDrawingType.Side: {
+                            if (wheel) {
+                                if (distToCenter < 2) {
+                                    this.setState({
+                                        wheelMode: wheelDrawingMode.MoveCenter
+                                    });
+                                    return;
+                                }
+                                else if (distToRadiusHandler < 3) {
+                                    this.setState({
+                                        wheelMode: wheelDrawingMode.ChangeRadius
+                                    });
+                                    return;
+                                }
+                            }
+                        } break;
+                        case wheelDrawingType.Top: {
+                            if (wheel) {
+                                if (distToOffsetHandler < 2) {
+                                    this.setState({
+                                        wheelMode: wheelDrawingMode.ChangeOffset
+                                    });
+                                    return;
+                                }
+                                else if (distToWidthHandler < 3) {
+                                    this.setState({
+                                        wheelMode: wheelDrawingMode.ChangeWidth
+                                    });
+                                    return;
+                                }
+                            }
+                        } break;
+                    }
+
+                    this.setState({
+                        wheelMode: wheelDrawingMode.ChangeRadius,
+                    }, () => {
+                        this.onWheelChange({
+                            center: pt,
+                            arcRadius: 0,
+                            wheelRadius: 0,
+                            offset: 10,
+                            width: 10
+                        }, wheelIndex);
+                    });
+                } break;
+            }
         }
     }
 
