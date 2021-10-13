@@ -2,7 +2,7 @@ import React from "react"
 import * as THREE from 'three';
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { BodyShape } from "./BodyShape";
-import { IPoint2D, IPoint3D } from "./lib";
+import { IPoint2D, IPoint3D, IRenderSettings } from "./lib";
 import { Vector3 } from "three";
 import { generationParity } from "./SidePlane";
 import { Subject, debounce, Subscription, interval } from "rxjs";
@@ -16,11 +16,10 @@ export interface IProps {
     sidePoints: IPoint2D[];
     frontPoints: IPoint2D[];
     topPoints: IPoint2D[];
-    wireframes: boolean;
-    flatShading: boolean;
     colorOdd: number;
     colorEven: number;
     wheels: IWheelModel[];
+    renderSettings: IRenderSettings;
 }
 
 interface IState {
@@ -84,13 +83,13 @@ export class AppScene extends React.Component<IProps, IState> {
             sidePoints, 
             frontPoints, 
             topPoints, 
-            wireframes, 
-            flatShading, 
+            renderSettings,
             colorOdd, 
             colorEven,
             wheels
         } = this.props;
 
+        const { flatShading, wireframes } = renderSettings;
         const wireframesColor = 0x00FF00;
         
         const parts = [

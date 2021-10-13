@@ -1,37 +1,33 @@
 import React from 'react';
 import './App.scss';
 import { AppScene } from './AppScene';
-import { Generate, IPoint3D, ISectionData, Tools } from './lib';
-import { Forms, Icon, IconSeparator, IIconProps, ModalsComponent } from './components';
-import { Dialogs } from './components/modal/modal';
-import { DesignStore, IDesign, IStorageModel } from './DesignStore';
+import { IRenderSettings, ISectionData, Tools } from './lib';
+import { ModalsComponent } from './components';
+import { DesignStore, IDesign, IDesignStoreState } from './DesignStore';
 import { SideEditor } from './components/side-editor';
-import { STLExporter  } from "three/examples/jsm/exporters/STLExporter";
-import { mergeBufferGeometries } from "three/examples/jsm/utils/BufferGeometryUtils";
-
-import { BodyShape } from './BodyShape';
-import { generationParity } from './SidePlane';
-import * as THREE from "three";
-import { MathUtils } from 'three';
 import { wheelDrawingType } from './components/drawing-model';
+import { MainToolbar } from './MainToolbar';
 
 interface IState {
-  storageModel: IStorageModel;
-  currentDesign: IDesign | null;
-  wireframes: boolean;
-  flatShading: boolean;
+  designStore: DesignStore;
   currentSectionData: ISectionData;
+  renderSettings: IRenderSettings;
+  designStoreState: IDesignStoreState;
 }
 
 export class App extends React.Component<{}, IState> {
   constructor(props: any) {
     super(props);
 
+    const designStore = new DesignStore();
+
     this.state = {
-      currentDesign: null,
-      wireframes: false,
-      flatShading: false,
-      storageModel: DesignStore.loadFromLocalStorage(),
+      designStore,
+      renderSettings: {
+        wireframes: false,
+        flatShading: false,
+      },
+      designStoreState: designStore.state,
       currentSectionData: {
         front: null,
         side: null,
@@ -40,54 +36,12 @@ export class App extends React.Component<{}, IState> {
     }
   }
 
-  newDesing(name: string): IDesign {
-    const boxSize: IPoint3D = {x: 101, y: 41, z: 31};
-    const sidePoints =  Generate.range(0, boxSize.x).map(i => ({ x: i, y: boxSize.z }));
-    const frontPoints = Generate.range(0, boxSize.y).map(i => ({ x: i, y: boxSize.z }));
-    const topPoints =  Generate.range(0, boxSize.x).map(i => ({ x: i, y: boxSize.y }));
-
-    return {
-      name,
-      boxSize,
-      sidePoints,
-      frontPoints,
-      topPoints,
-      colorOdd: 0xEB7D09,
-      colorEven: 0x000000,
-      wheels: []
-    }
-  }
-
-  resetModel() {
-    const { currentDesign } = this.state;
-    if (!currentDesign) return;
-
-    const newDesign = this.newDesing(currentDesign.name);
-    this.updateDesign(newDesign);
-  }
-
-  updateDesign(design: IDesign | null) {
-    if (!design) return;
-    const updated = DesignStore.updateDesign(design);
-    if (!updated) return;
-
-    this.setState({
-      storageModel: updated.storageModel,
-      currentDesign: updated.design
-    })
-  }
-
   componentDidMount() {
-    const { storageModel } = this.state;
-
-    const design = storageModel?.designs[0] ?? this.newDesing("Default");
-
-    this.setState({
-      currentDesign: design
-    });
+    const { designStore } = this.state;
+    designStore.subscribe(s => this.setState({ designStoreState: s }));
 
     window.ontouchstart = function(event) {
-      if (event.touches.length>1) { //If there is more than one touch
+      if (event.touches.length > 1) { //If there is more than one touch
           event.preventDefault();
       }
     }
@@ -99,20 +53,21 @@ export class App extends React.Component<{}, IState> {
   }
 
   renderDesign() {
-    const { currentDesign, wireframes, flatShading, currentSectionData } = this.state;
-    if (!currentDesign) return null;
+    const { designStoreState, designStore, renderSettings, currentSectionData } = this.state;
+    const { design } = designStoreState;
+    if (!design) return null;
 
-    const { boxSize, frontPoints, sidePoints, topPoints, colorOdd, colorEven, wheels } = currentDesign;
+    const { boxSize, frontPoints, sidePoints, topPoints, colorOdd, colorEven, wheels } = design;
 
     const canvasWidth = 700;
     const canvasHeight = 300;
 
     const modifyDesign = (diff: Partial<IDesign>) => {
       const modified = {
-        ...currentDesign,
+        ...design,
         ...diff
       };
-      this.updateDesign(modified);
+      designStore.updateDesign(modified);
     }
 
     return (
@@ -213,8 +168,7 @@ export class App extends React.Component<{}, IState> {
                 sidePoints={sidePoints} 
                 frontPoints={frontPoints} 
                 topPoints={topPoints}
-                wireframes={wireframes}
-                flatShading={flatShading}
+                renderSettings={renderSettings}
                 colorEven={colorEven}
                 colorOdd={colorOdd}
                 wheels={wheels}
@@ -226,154 +180,20 @@ export class App extends React.Component<{}, IState> {
     )
   }
 
-  async newDesign() {
-    const now = new Date();
-    const newDesign = await Forms.Modal(
-      "New Design", 
-      {
-        stringName: `${now.toLocaleDateString()} - ${now.toLocaleTimeString()}`
-      }
-    );
-
-    if (newDesign) {
-      const design = this.newDesing(newDesign.stringName);
-      this.updateDesign(design);  
-    }
-  }
-
-  async cloneDesign() {
-    const { currentDesign } = this.state;
-    if (!currentDesign) return;
-    const now = new Date();
-
-    const cloneDesignParams = await Forms.Modal(
-      "Clone Design", 
-      {
-        stringName: `${currentDesign.name} - ${now.toLocaleDateString()} - ${now.toLocaleTimeString()}`
-      }
-    );
-    if (!cloneDesignParams) return;
-    const clonedDesign = Tools.clone(currentDesign);
-    clonedDesign.name = cloneDesignParams.stringName;
-    this.updateDesign(clonedDesign);  
-  }
-
-  async deleteDesign() {
-    const { currentDesign } = this.state;
-    if (!currentDesign) return;
-    if (!await Dialogs.Confirm(`Delete ${currentDesign.name}`)) return;
-
-    const updated = DesignStore.deleteDesign(currentDesign);
-    if (!updated) return;
-
-    this.setState({
-      storageModel: updated.storageModel,
-      currentDesign: updated.design
-    })
-  }
-
-  async settings() {
-    const { currentDesign } = this.state;
-    if (!currentDesign) return;
-
-    const settings = await Forms.Modal(currentDesign.name, {
-      stringName: currentDesign.name,
-      colorOdd: currentDesign.colorOdd,
-      colorEven: currentDesign.colorEven
-    });
-    if (!settings) return;
-    const updated = DesignStore.updateDesign(currentDesign, (d) => {
-      d.name = settings.stringName;
-      d.colorOdd = settings.colorOdd;
-      d.colorEven = settings.colorEven;
-    });
-    if (!updated) return;
-
-    this.setState({
-      storageModel: updated.storageModel,
-      currentDesign: updated.design
-    })
-
-  }
-
-  async exportSTL() {
-    const { currentDesign } = this.state;
-    if (!currentDesign) return;
-
-    const params = await Forms.Modal("Export to STL", {
-      stringName: `${currentDesign.name}.stl`,
-      intXRotationDeg: 0,
-      intYRotationDeg: 0,
-      intZRotationDeg: 0
-    });
-
-    if (!params) return;
-
-    const { boxSize, topPoints, frontPoints, sidePoints, wheels } = currentDesign;
-    const exporter = new STLExporter();
-    const bodyShape = new BodyShape(boxSize.x, boxSize.y, boxSize.z, generationParity.All);
-    bodyShape.apply(sidePoints, frontPoints, topPoints, wheels );
-    const singleGeometry = mergeBufferGeometries(bodyShape.geometry);
-    
-    singleGeometry.rotateX(MathUtils.degToRad(params.intXRotationDeg));
-    singleGeometry.rotateY(MathUtils.degToRad(params.intYRotationDeg));
-    singleGeometry.rotateZ(MathUtils.degToRad(params.intXRotationDeg));
-
-    const material = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
-    const mesh = new THREE.Mesh( singleGeometry, material );
-
-    const stl = exporter.parse(mesh);
-    const link = document.createElement( 'a' );
-    link.style.display = 'none';
-    document.body.appendChild( link );
-
-    const blob = new Blob( [ stl ], { type: 'text/plain' } );
-
-    link.href = URL.createObjectURL( blob );
-    link.download = params.stringName || "test.stl";
-    link.click();
-
-    link.remove();
-  }
-
-  renderToolbar() {
-    const { wireframes, flatShading } = this.state;
-    const iconParams: Partial<IIconProps> = {
-        bordered: true
-    }
-
-    return (
-      <div className="menu menu-top">
-        <Icon type="VscNewFile" title="New Design" {...iconParams} onClick={() => this.newDesign()}/>
-        <IconSeparator/>
-        <Icon type="GrClone" title="Clone Design" {...iconParams} onClick={() => this.cloneDesign()}/>
-        <Icon type="AiOutlineSetting" title="Settings" {...iconParams} onClick={() => this.settings()}/>
-        <Icon type="AiOutlineCloseCircle" title="Delete Design" {...iconParams} onClick={() => this.deleteDesign()}/>
-
-        {/*<Icon type="GrPowerReset" onClick={() => this.resetModel()}/>*/}
-        <IconSeparator/>
-        <Icon type="GiWireframeGlobe" title="Wireframes" {...iconParams} selected={wireframes} onClick={() => this.setState({ wireframes: !wireframes })} />
-        <Icon type="CgEditShadows" title="Flat Shading" {...iconParams} selected={flatShading} onClick={() => this.setState({ flatShading: !flatShading })}/>
-        <Icon type="AiOutlineExport" title="Export STL" {...iconParams} onClick={() => this.exportSTL()}/>
-      </div>      
-    );
-  }
-
   renderDesignSelector() {
-    const { storageModel, currentDesign } = this.state;
+    const { designStore, designStoreState } = this.state;
+    const { storageModel, design } = designStoreState;
 
     return (
       <div className="menu menu-top">
         {storageModel.designs.map(d => {
           const classes = {
             "design-selector": true,
-            "design-selector-active": d === currentDesign
+            "design-selector-active": d === design
           }
           return (
             <div key={d.name} className={Tools.classNames(classes)} onClick={() => {
-              this.setState({
-                currentDesign: d
-              })
+              designStore.setActiveDesign(d);
             }}>{d.name}</div>
           );
         })}
@@ -382,14 +202,17 @@ export class App extends React.Component<{}, IState> {
   }
 
   render() {
-    const { currentDesign } = this.state;
-
-    if (!currentDesign) return null;
+    const { designStore, designStoreState, renderSettings } = this.state;
 
     return (
       <div className="App">
         <div>
-          {this.renderToolbar()}
+          <MainToolbar 
+            designStore={designStore} 
+            designStoreState={designStoreState} 
+            renderSettings={renderSettings} 
+            renderSettingsChanged={s => this.setState({ renderSettings: s })}
+          />
           {this.renderDesignSelector()}
           {this.renderDesign()}
         </div>   

@@ -1,6 +1,6 @@
 import { BufferGeometry } from "three";
 import { IWheelModel } from "./components/drawing-model";
-import { IPoint2D, IPoint3D, Tools } from "./lib";
+import { IPoint2D, IPoint3D, ISectionData, ISectionPoints, Tools } from "./lib";
 import { generationMode, generationParity, SidePlane } from "./SidePlane";
 
 export class BodyShape {
@@ -237,6 +237,14 @@ export class BodyShape {
                 }
             }]
         });
+    }
+
+    public sectionPoints(section: ISectionData): ISectionPoints {
+        return {
+            front: [],
+            side: [],
+            top: []
+        }
     }
 
     public get geometry(): BufferGeometry[] {
