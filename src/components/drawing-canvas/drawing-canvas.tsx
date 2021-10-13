@@ -6,6 +6,7 @@ import { drawingMode, IWheelModel, wheelDrawingType } from "../drawing-model";
 import "./drawing-canvas.scss";
 
 export interface IDrawingCanvasProps {
+    id: string;
     symmetrical: boolean;
     height: number;
     width: number;
@@ -14,6 +15,9 @@ export interface IDrawingCanvasProps {
     wheelDrawing: wheelDrawingType;
     wheels: IWheelModel[] | null;
     onChange: (samples: IPoint2D[], wheels: IWheelModel[] | null) => void;
+    onSectionSelected: (section: number) => void;
+    onSectionChanged: (section: number, points: IPoint2D[]) => void;
+    sections: number;
 }
 
 enum wheelDrawingMode {
@@ -33,21 +37,26 @@ interface IWheelData {
     distToWidthHandler: number;
 }
 
-interface IProps extends IDrawingCanvasProps{
+interface IProps extends IDrawingCanvasProps {
     mode: drawingMode;
 }
 
 interface IState {
     margin: number;
+    sectionSelectorHeight: number;
     //width: number;
     //height: number;
     scale: number;
     wheelMode: wheelDrawingMode;
     wheelIndex: number;
+    showSectionSelector: boolean;
+    sectionIndex: number;
 }
 
 export class DrawingCanvas extends Component<IProps, IState> {
     canvas: HTMLCanvasElement | null = null;
+    sectionCanvas: HTMLCanvasElement | null = null;
+
     buffer: BufferStream<IPoint2D> | null = null;
 
     enabled = false;
@@ -55,18 +64,21 @@ export class DrawingCanvas extends Component<IProps, IState> {
 
     constructor(props: IProps) {
         super(props);
-
+        const sectionSelectorHeight = 25;
         const scale = Math.min(
             Math.floor(props.width / props.samples.length),
-            Math.floor(props.height / props.maxY)
+            Math.floor((props.height - sectionSelectorHeight) / props.maxY)
         ) 
         this.state = {
             //width: props.width,
             //height: props.height,
             scale: scale,
             margin: 25,
+            sectionSelectorHeight,
             wheelMode: wheelDrawingMode.Create,
-            wheelIndex: -1
+            wheelIndex: -1,
+            showSectionSelector: false,
+            sectionIndex: 0
         }
 
         this.onMouseUp = this.onMouseUp.bind(this);
@@ -463,6 +475,24 @@ export class DrawingCanvas extends Component<IProps, IState> {
         }
     };
 
+    fromCanvasCoordinates(canvas: HTMLCanvasElement | null, e: React.MouseEvent<HTMLCanvasElement>): IPoint2D {
+        const { samples, maxY } = this.props;
+        const { scale, margin } = this.state;
+
+        if (!canvas) return { x: 0, y: 0 };
+
+        var rect = canvas.getBoundingClientRect();
+        const pt = this.translate({ 
+            x: e.clientX - rect.left - margin, 
+            y: 0
+        });
+
+        pt.x = Tools.withinRange(Math.round(pt.x / scale), 0, samples.length - 1);
+        pt.y = Tools.withinRange(pt.y / scale, 0, maxY);
+
+        return pt;
+    }
+
     setPosition(e: React.MouseEvent<HTMLCanvasElement>) {
         const { samples, maxY, mode, wheelDrawing } = this.props;
         const { scale, margin, wheelMode } = this.state;
@@ -591,6 +621,40 @@ export class DrawingCanvas extends Component<IProps, IState> {
         }
     }
 
+    renderSectionSelector() {
+        const { id, onSectionChanged, sections } = this.props;
+        const { sectionIndex, showSectionSelector } = this.state;
+
+        if (!onSectionChanged) return null;
+
+        const selectorId = `${id}_sections`;
+        const sectionsToggler = (
+            <>
+                <input 
+                    id={selectorId}
+                    type="checkbox" 
+                    checked={showSectionSelector} 
+                    onChange={e => this.setState({ showSectionSelector: !showSectionSelector })}            
+                />
+                <label htmlFor={selectorId}>Sections</label>
+            </>
+        )
+
+
+        if (!showSectionSelector) {
+            return sectionsToggler;
+        }
+
+        const max = sections - 1;
+        return (
+            <div>
+                {sectionsToggler}
+                <input type="range" min={0} max={max} value={sectionIndex} onChange={e => this.setState({ sectionIndex: parseInt(e.target.value) })}/>
+                <input type="number" value={sectionIndex} min={0} max={max} onChange={e => this.setState({ sectionIndex: parseInt(e.target.value) })}/>
+            </div>
+        );
+    }
+
     render() {
         const { samples, maxY } = this.props;
         const { scale, margin } = this.state;
@@ -600,6 +664,7 @@ export class DrawingCanvas extends Component<IProps, IState> {
         return (
             <div>
                 <div>
+                    {this.renderSectionSelector()}
                     <canvas
                         width={width + 2 * margin}
                         height={height + 2 * margin}

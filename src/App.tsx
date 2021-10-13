@@ -1,7 +1,7 @@
 import React from 'react';
 import './App.scss';
 import { AppScene } from './AppScene';
-import { Generate, IPoint3D, Tools } from './lib';
+import { Generate, IPoint3D, ISectionData, Tools } from './lib';
 import { Forms, Icon, IconSeparator, IIconProps, ModalsComponent } from './components';
 import { Dialogs } from './components/modal/modal';
 import { DesignStore, IDesign, IStorageModel } from './DesignStore';
@@ -20,6 +20,7 @@ interface IState {
   currentDesign: IDesign | null;
   wireframes: boolean;
   flatShading: boolean;
+  currentSectionData: ISectionData;
 }
 
 export class App extends React.Component<{}, IState> {
@@ -30,7 +31,12 @@ export class App extends React.Component<{}, IState> {
       currentDesign: null,
       wireframes: false,
       flatShading: false,
-      storageModel: DesignStore.loadFromLocalStorage()
+      storageModel: DesignStore.loadFromLocalStorage(),
+      currentSectionData: {
+        front: null,
+        side: null,
+        top: null
+      }
     }
   }
 
@@ -93,7 +99,7 @@ export class App extends React.Component<{}, IState> {
   }
 
   renderDesign() {
-    const { currentDesign, wireframes, flatShading } = this.state;
+    const { currentDesign, wireframes, flatShading, currentSectionData } = this.state;
     if (!currentDesign) return null;
 
     const { boxSize, frontPoints, sidePoints, topPoints, colorOdd, colorEven, wheels } = currentDesign;
@@ -115,6 +121,7 @@ export class App extends React.Component<{}, IState> {
           <tr>
             <td>
               <SideEditor 
+                id="front"
                 title={`Front (${frontPoints.length}x${boxSize.z})`}
                 symmetrical={true}
                 width={canvasWidth}
@@ -128,10 +135,21 @@ export class App extends React.Component<{}, IState> {
                 }}
                 wheels={null}
                 wheelDrawing={wheelDrawingType.None}
+                sections={boxSize.x}
+                onSectionSelected={s => {
+                  this.setState({
+                    currentSectionData: {
+                      ...currentSectionData,
+                      front: s
+                    }
+                  })
+                }}
+                onSectionChanged={(sections, points) => {}}
               />
             </td>
             <td>
               <SideEditor 
+                id="top"
                 title={`Top (${topPoints.length}x${boxSize.y})`}
                 symmetrical={false}
                 width={canvasWidth}
@@ -146,12 +164,23 @@ export class App extends React.Component<{}, IState> {
                 }}
                 wheels={wheels}
                 wheelDrawing={wheelDrawingType.Top}
+                sections={boxSize.z}
+                onSectionSelected={s => {
+                  this.setState({
+                    currentSectionData: {
+                      ...currentSectionData,
+                      top: s
+                    }
+                  })
+                }}                
+                onSectionChanged={(sections, points) => {}}
               />
             </td>
           </tr>
           <tr>
             <td>
               <SideEditor 
+                id="side"
                 title={`Side (${sidePoints.length}x${boxSize.z})`}
                 symmetrical={false}
                 width={canvasWidth}
@@ -166,6 +195,16 @@ export class App extends React.Component<{}, IState> {
                 }}
                 wheels={wheels}
                 wheelDrawing={wheelDrawingType.Side}
+                sections={boxSize.y}
+                onSectionSelected={s => {
+                  this.setState({
+                    currentSectionData: {
+                      ...currentSectionData,
+                      side: s
+                    }
+                  })
+                }}
+                onSectionChanged={(sections, points) => {}}
               />
             </td>
             <td>

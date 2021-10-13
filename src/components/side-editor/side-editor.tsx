@@ -13,6 +13,7 @@ export interface ISideEditorProps extends IDrawingCanvasProps {
 
 interface IState {
     mode: drawingMode;
+    currentSection: number | null;
 }
 
 export class SideEditor extends React.Component<ISideEditorProps, IState> {
@@ -20,6 +21,7 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
         super(props);
         this.state = {
             mode: drawingMode.Contour,
+            currentSection: null
         }
     }
 
@@ -100,7 +102,7 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
                 {wheels && <Icon type="GiCartwheel" title="Draw wheel" {...iconParams} selected={mode === drawingMode.Wheel} onClick={() => this.setState({ mode: drawingMode.Wheel })}/>}
                 <IconSeparator {...iconParams}/>
                 <Icon type="ImMoveUp" title="Move Up" {...iconParams} onClick={() => this.moveUp()}/>
-                <Icon type="ImMoveDown" title="Move Up" {...iconParams} onClick={() => this.moveDown()}/>
+                <Icon type="ImMoveDown" title="Move Down" {...iconParams} onClick={() => this.moveDown()}/>
                 <Icon type="AiOutlineBorderTop" title="All Up" {...iconParams} onClick={() => this.allUp()}/>
                 <Icon type="AiOutlineBorderBottom" title="All Down" {...iconParams} onClick={() => this.allDown()}/>
                 <Icon type="GiWhiplash" title="Smooth" {...iconParams} onClick={() => this.smooth()}/>
@@ -109,15 +111,34 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
     }
     
     render() {
-        const { title, width, height, maxY, symmetrical, samples, onChange, wheels, wheelDrawing } = this.props;
-        const { mode } = this.state;
+        const { 
+            id,
+            title, 
+            width, 
+            height, 
+            maxY, 
+            symmetrical, 
+            samples, 
+            onChange, 
+            wheels, 
+            wheelDrawing, 
+            sections,
+            onSectionChanged,
+            onSectionSelected
+        } = this.props;
+        const { mode, currentSection } = this.state;
 
+        const titleParts = [
+            title,
+            currentSection !== null ? `@${currentSection}`: null
+        ]
         return (
             <div className="side-editor">
                 {this.renderMenu()}
                 <div className="side-drawing-container">
-                    {title}
+                    {titleParts.filter(Boolean).join(",")}
                     <DrawingCanvas 
+                        id={id}
                         symmetrical={symmetrical}
                         width={width}
                         height={height}
@@ -127,6 +148,15 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
                         onChange={onChange}
                         wheels={wheels}
                         wheelDrawing={wheelDrawing}
+                        sections={sections}
+                        onSectionChanged={onSectionChanged}
+                        onSectionSelected={(s) => {
+                            this.setState({ 
+                                currentSection: s 
+                            }, () => {
+                                onSectionSelected(s);
+                            })                            
+                        }}
                     />
                 </div>
             </div>

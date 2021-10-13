@@ -34,7 +34,7 @@ export class ModalSideEditor extends React.Component<IProps, IState> {
     }
 
     render() {
-        const { title, symmetrical, maxY, onChange, wheelDrawing} = this.props;
+        const { id, title, symmetrical, maxY, onChange, wheelDrawing, sections, onSectionSelected, onSectionChanged} = this.props;
         const { samples, wheels } = this.state;
 
         const width = (this._container?.clientWidth ?? 0) * 0.9;
@@ -44,6 +44,7 @@ export class ModalSideEditor extends React.Component<IProps, IState> {
             <div className="modal-side-editor" ref={r => this._container = r}>
                 ({this._container?.clientWidth}x{this._container?.clientHeight})
                 { width && height ? <SideEditor 
+                    id={`${id}_modal`}
                     title={title}
                     symmetrical={symmetrical}
                     width={width}
@@ -59,6 +60,9 @@ export class ModalSideEditor extends React.Component<IProps, IState> {
                     }}
                     wheels={wheels}
                     wheelDrawing={wheelDrawing}
+                    sections={sections}
+                    onSectionChanged={onSectionChanged}
+                    onSectionSelected={onSectionSelected}
                 /> : null
                 }
             </div>
