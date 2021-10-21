@@ -4,9 +4,12 @@ import { CgEditShadows } from "react-icons/cg";
 import { GiWireframeGlobe, GiCartwheel } from "react-icons/gi";
 import { GrPowerReset, GrClone } from "react-icons/gr";
 import { VscNewFile } from "react-icons/vsc";
-import { AiOutlineExport, AiOutlineSetting, AiOutlineInfoCircle, AiOutlineCloseCircle, AiOutlineWarning, AiOutlineBorderTop, AiOutlineBorderBottom, AiOutlineFullscreen } from "react-icons/ai";
+import { AiOutlineFunction, AiFillLock, AiOutlineFastForward, AiOutlineGithub, AiOutlineTwitter, AiOutlineExport, AiOutlineSetting, AiOutlineInfoCircle, AiOutlineCloseCircle, AiOutlineWarning, AiOutlineBorderTop, AiOutlineBorderBottom, AiOutlineFullscreen } from "react-icons/ai";
 import { ImMoveUp, ImMoveDown, ImPencil2 } from "react-icons/im"
-import { GiWhiplash } from "react-icons/gi"
+import { GiWhiplash, GiSlicedBread } from "react-icons/gi"
+import { TiArrowForwardOutline } from "react-icons/ti"
+import { BiChip } from "react-icons/bi"
+import { RiDeleteBack2Line } from "react-icons/ri"
 
 import { Tools } from "../../lib";
 import "./icon.scss";
@@ -32,7 +35,16 @@ export type iconType =
     "AiOutlineExport" | 
     "GiWhiplash" |
     "ImPencil2" |
-    "GiCartwheel"
+    "GiCartwheel" |
+    "GiSlicedBread" |
+    "AiOutlineTwitter" |
+    "AiOutlineGithub" |
+    "AiOutlineFastForward" |
+    "TiArrowForwardOutline" |
+    "BiChip" |
+    "RiDeleteBack2Line" |
+    "AiFillLock" |
+    "AiOutlineFunction"
     ;
 
 export interface IIconElementProps {
@@ -43,27 +55,48 @@ export interface IIconElementProps {
 export interface IIconProps extends IIconElementProps {
     type: iconType;
     title?: string;
+    readOnlyTitle?: string;
     selected?: boolean;
+    readOnly?: boolean;
     bordered?: boolean;
     onClick?: () => void;
 }
 
 export class Icon extends React.Component<IIconProps> {
     getIcon() {
-        const { type, title, bordered = false, className, selected = false, size = "medium", onClick } = this.props;
+        const { 
+            type, 
+            title = "", 
+            readOnlyTitle,
+            bordered = false, 
+            readOnly = false, 
+            className, 
+            selected = false, 
+            size = "medium", 
+            onClick
+        } = this.props;
+
         const classNames: {[key: string]: boolean} = {
             "icon": true,
             "icon-selected": selected,
             "icon-bordered": bordered,
+            "icon-readonly": readOnly,
             [`icon-${size}`]: true
         };
 
         if (className) classNames[className] = true;
 
+        const iconTitle = readOnly 
+            ? title + (readOnlyTitle ? ` (${readOnlyTitle})` : "")
+            : title;
+
         const iconProps: IconBaseProps = {
-            title: title,
+            title: iconTitle,
             className: Tools.classNames(classNames),
-            onClick: () => onClick?.()
+            onClick: () => {
+                if (readOnly) return;
+                onClick?.()
+            }
         };
 
         switch (type) {
@@ -85,6 +118,15 @@ export class Icon extends React.Component<IIconProps> {
             case "GiWhiplash": return <GiWhiplash {...iconProps}/>
             case "ImPencil2": return <ImPencil2 {...iconProps}/>
             case "GiCartwheel": return <GiCartwheel {...iconProps}/>
+            case "GiSlicedBread": return <GiSlicedBread {...iconProps}/>
+            case "AiOutlineTwitter": return <AiOutlineTwitter {...iconProps}/>
+            case "AiOutlineGithub": return <AiOutlineGithub {...iconProps} />
+            case "AiOutlineFastForward": return <AiOutlineFastForward {...iconProps}/>
+            case "TiArrowForwardOutline": return <TiArrowForwardOutline {...iconProps}/>
+            case "BiChip": return <BiChip {...iconProps}/>
+            case "RiDeleteBack2Line": return <RiDeleteBack2Line {...iconProps} />
+            case "AiFillLock": return <AiFillLock {...iconProps}/>
+            case "AiOutlineFunction": return <AiOutlineFunction {...iconProps}/>
             default: return null;
         }
     }

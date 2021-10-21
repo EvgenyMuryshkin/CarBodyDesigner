@@ -110,10 +110,10 @@ export class MainToolbar extends React.Component<IProps> {
     
         if (!params) return;
     
-        const { boxSize, topPoints, frontPoints, sidePoints, wheels } = design;
+        const { boxSize, topPoints, frontPoints, sidePoints, wheels, frontSegments } = design;
         const exporter = new STLExporter();
         const bodyShape = new BodyShape(boxSize.x, boxSize.y, boxSize.z, generationParity.All);
-        bodyShape.apply(sidePoints, frontPoints, topPoints, wheels );
+        bodyShape.applyContour(sidePoints, frontPoints, topPoints, wheels, frontSegments );
         const singleGeometry = mergeBufferGeometries(bodyShape.geometry);
         
         singleGeometry.rotateX(MathUtils.degToRad(params.intXRotationDeg));
@@ -138,26 +138,45 @@ export class MainToolbar extends React.Component<IProps> {
     }
 
     render() {
-        const { renderSettings } = this.props;
+        const { renderSettings, renderSettingsChanged } = this.props;
         const { wireframes, flatShading } = renderSettings;
         const iconParams: Partial<IIconProps> = {
-            bordered: true
+            bordered: true,
+            size: "large"
+        }
+
+        const separatorParams: Partial<IIconProps> = {
+            size: iconParams.size
         }
     
+        const modify = (diff: Partial<IRenderSettings>) => {
+            renderSettingsChanged({
+                ...renderSettings,
+                ...diff
+            });
+
+        }
         return (
           <div className="menu menu-top">
             <Icon type="VscNewFile" title="New Design" {...iconParams} onClick={() => this.newDesign()}/>
-            <IconSeparator/>
+            <IconSeparator {...separatorParams}/>
             <Icon type="GrClone" title="Clone Design" {...iconParams} onClick={() => this.cloneDesign()}/>
             <Icon type="AiOutlineSetting" title="Settings" {...iconParams} onClick={() => this.settings()}/>
             <Icon type="AiOutlineCloseCircle" title="Delete Design" {...iconParams} onClick={() => this.deleteDesign()}/>
     
             {/*<Icon type="GrPowerReset" onClick={() => this.resetModel()}/>*/}
-            <IconSeparator/>
-            <Icon type="GiWireframeGlobe" title="Wireframes" {...iconParams} selected={wireframes} onClick={() => this.setState({ wireframes: !wireframes })} />
-            <Icon type="CgEditShadows" title="Flat Shading" {...iconParams} selected={flatShading} onClick={() => this.setState({ flatShading: !flatShading })}/>
+            <IconSeparator {...separatorParams}/>
+            <Icon type="GiWireframeGlobe" title="Wireframes" {...iconParams} selected={wireframes} onClick={() => modify({ wireframes: !wireframes })} />
+            <Icon type="CgEditShadows" title="Flat Shading" {...iconParams} selected={flatShading} onClick={() => modify({ flatShading: !flatShading })}/>
             <Icon type="AiOutlineExport" title="Export STL" {...iconParams} onClick={() => this.exportSTL()}/>
-          </div>      
+            
+            <IconSeparator {...separatorParams}/>
+            <Icon type="AiOutlineGithub" title="Github" {...iconParams} onClick={() => {window.open("https://github.com")}}/>
+            <Icon type="AiOutlineTwitter" title="Twitter" {...iconParams} onClick={() => {window.open("https://twitter.com")}}/>
+            <Icon type="BiChip" title="QuSoC" {...iconParams} onClick={() => {window.open("https://github.com/EvgenyMuryshkin/qusoc")}}/>
+      
+            
+         </div>      
         );
     }
 }

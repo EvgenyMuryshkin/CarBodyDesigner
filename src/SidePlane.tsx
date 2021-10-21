@@ -41,6 +41,14 @@ export class SidePlane {
         return this.props.length * this.props.width;
     }
 
+    get width() {
+        return this.props.width;
+    }
+
+    get length() {
+        return this.props.length;
+    }
+
     constructor(props: ISidePlaneProps) {
         const { length, width, pointsMapper } = props;
         const { vertices, indices, uvs } = this;
@@ -213,6 +221,10 @@ export class SidePlane {
         }
     }
 
+    public getVertice(index: number) {
+        return this.vertices[index].vertice;
+    }
+
     public apply(handler: (l: number, w: number, p: IVerticeData) => void) {
         const { length, width } = this.props;
         const { vertices } = this;
@@ -229,6 +241,26 @@ export class SidePlane {
         }     
     }
 
+    public transformedVertices(scale: number) {
+        const { vertices } = this;
+        const allPoints = vertices.map(v => v.vertice);
+
+        const points: IPoint3D[] = [];
+        vertices.forEach(v => {
+            let p = v.vertice;
+            v.handlers.forEach(h => {
+                p = h(p, allPoints);
+            });
+            points.push({
+                x: p.x * scale,
+                y: p.y * scale,
+                z: p.z * scale
+            });
+        });
+
+        return points;
+    }
+    
     public geometry(scale: number): BufferGeometry {
         const { vertices, indices, uvs, normals } = this;
         const { log } = this.props;
@@ -236,15 +268,9 @@ export class SidePlane {
         const r = new BufferGeometry();
 
         const points: number[] = [];
-        const allPoints = vertices.map(v => v.vertice);
 
-        vertices.forEach(v => {
-            let p = v.vertice;
-            v.handlers.forEach(h => {
-                p = h(p, allPoints);
-            });
-            points.push(p.x * scale, p.y * scale, p.z * scale);
-        });
+        const transformed = this.transformedVertices(scale);
+        transformed.forEach(p => points.push(p.x, p.y, p.z));
 
         const getVector = (index: number) => {
             const vertice =  vertices[index].vertice
@@ -271,51 +297,7 @@ export class SidePlane {
             const cross1 = new Vector3().crossVectors(v_0_1, v_0_2).normalize();
             setNormalVectors(cross1, cross1, cross1);
         }
-/*
-        for (const l of Generate.range(0, length - 1)) {
-            for (const w of Generate.range(0, width - 1)) {
-                const i0 = l * width + w;
-                const i1 = i0 + 1;
-                const i2 = i0 + width;
-                const i3 = i2 + 1;
-    
-                const v_0_1 = new Vector3().subVectors(getVector(i1), getVector(i0));
-                const v_0_2 = new Vector3().subVectors(getVector(i2), getVector(i0));
-                const cross1 = new Vector3().crossVectors(v_0_1, v_0_2).normalize();
-                setNormalVectors(cross1, cross1, cross1);
-
-                const v_3_1 = new Vector3().subVectors(getVector(i3), getVector(i1));
-                const v_3_2 = new Vector3().subVectors(getVector(i3), getVector(i2));
-                const cross2 = new Vector3().crossVectors(v_3_2, v_3_1).normalize();
-                setNormalVectors(cross2, cross2, cross2);
-            }
-        }
-
-        for (const l of Generate.range(0, length - 1)) {
-            for (const w of Generate.range(0, width - 1)) {
-                const i0 = this.offset + l * width + w;
-                const i1 = i0 + 1;
-                const i2 = i0 + width;
-                const i3 = i2 + 1;
-    
-                const v_0_1 = new Vector3().subVectors(getVector(i1), getVector(i0));
-                const v_0_2 = new Vector3().subVectors(getVector(i2), getVector(i0));
-                const cross1 = new Vector3().crossVectors(v_0_2, v_0_1).normalize();
-                setNormalVectors(cross1, cross1, cross1);
-
-                const v_3_1 = new Vector3().subVectors(getVector(i3), getVector(i1));
-                const v_3_2 = new Vector3().subVectors(getVector(i3), getVector(i2));
-                const cross2 = new Vector3().crossVectors(v_3_1, v_3_2).normalize();
-                setNormalVectors(cross2, cross2, cross2);
-            }
-        }
-*/
-
-/*
-        console.log(points);
-        console.log(normals);
-        console.log(indices);
-*/   
+ 
         r.setAttribute('position', new Float32BufferAttribute(points, 3));
         r.setAttribute('normal', new Float32BufferAttribute(normals, 3));
         r.setAttribute('uv', new Float32BufferAttribute(uvs, 2));

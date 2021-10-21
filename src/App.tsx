@@ -7,6 +7,8 @@ import { DesignStore, IDesign, IDesignStoreState } from './DesignStore';
 import { SideEditor } from './components/side-editor';
 import { wheelDrawingType } from './components/drawing-model';
 import { MainToolbar } from './MainToolbar';
+import { BodyShape, CountourQuery } from './BodyShape';
+import { generationParity } from './SidePlane';
 
 interface IState {
   designStore: DesignStore;
@@ -57,7 +59,7 @@ export class App extends React.Component<{}, IState> {
     const { design } = designStoreState;
     if (!design) return null;
 
-    const { boxSize, frontPoints, sidePoints, topPoints, colorOdd, colorEven, wheels } = design;
+    const { boxSize, frontPoints, sidePoints, topPoints, wheels, frontSegments } = design;
 
     const canvasWidth = 700;
     const canvasHeight = 300;
@@ -70,6 +72,17 @@ export class App extends React.Component<{}, IState> {
       designStore.updateDesign(modified);
     }
 
+    const bodyShape = new BodyShape(boxSize.x, boxSize.y, boxSize.z, generationParity.All);
+    bodyShape.applyContour(sidePoints, frontPoints, topPoints, wheels, [] );
+    
+    //const section = bodyShape.sectionPoints(design, currentSectionData);
+
+    const contourQuery = new CountourQuery(frontPoints, frontSegments);
+    const section = frontSegments[currentSectionData.front || 0];
+    const sectionBaseline = section 
+      ? contourQuery.query((currentSectionData.front || 0) - 1)
+      : contourQuery.query(currentSectionData.front || 0);
+
     return (
       <table className="main-layout">
         <tbody>
@@ -81,9 +94,9 @@ export class App extends React.Component<{}, IState> {
                 symmetrical={true}
                 width={canvasWidth}
                 height={canvasHeight}
-                samples={frontPoints}
+                contour={frontPoints}
                 maxY={boxSize.z}
-                onChange={(newPoints) => {
+                onCountourChange={(newPoints) => {
                   modifyDesign({
                     frontPoints: newPoints
                   })
@@ -91,15 +104,30 @@ export class App extends React.Component<{}, IState> {
                 wheels={null}
                 wheelDrawing={wheelDrawingType.None}
                 sections={boxSize.x}
-                onSectionSelected={s => {
+                onSectionSelected={(show, section) => {
                   this.setState({
                     currentSectionData: {
                       ...currentSectionData,
-                      front: s
+                      front: show ? section : null
                     }
                   })
                 }}
-                onSectionChanged={(sections, points) => {}}
+                onSectionChanged={(sections, points) => {
+                  const modifiedSegments = [...design.frontSegments];
+                  sections.forEach(s => {
+                    if (s == sections[0] && points !== null) {
+                      modifiedSegments[s] = points.map(p => ({ x: p.x, y: p.y }));
+                    }
+                    else {
+                      delete modifiedSegments[s];
+                    }
+                  })
+                  modifyDesign({
+                    frontSegments: modifiedSegments
+                  })
+                }}
+                sectionBaseline={sectionBaseline}
+                section={section/*section.front.map((p, idx) => ({ x: idx, y: p.y }))*/}
               />
             </td>
             <td>
@@ -109,9 +137,9 @@ export class App extends React.Component<{}, IState> {
                 symmetrical={false}
                 width={canvasWidth}
                 height={canvasHeight}
-                samples={topPoints}
+                contour={topPoints}
                 maxY={boxSize.y}
-                onChange={(newPoints, newWheels) => {
+                onCountourChange={(newPoints, newWheels) => {
                   modifyDesign({
                     topPoints: newPoints,
                     wheels: newWheels || [] 
@@ -120,15 +148,17 @@ export class App extends React.Component<{}, IState> {
                 wheels={wheels}
                 wheelDrawing={wheelDrawingType.Top}
                 sections={boxSize.z}
-                onSectionSelected={s => {
+                onSectionSelected={(show, section) => {
                   this.setState({
                     currentSectionData: {
                       ...currentSectionData,
-                      top: s
+                      top: show ? section : null
                     }
                   })
                 }}                
                 onSectionChanged={(sections, points) => {}}
+                section={null/*section.top.map((p, idx) => ({ x: idx, y: p.y }))*/}
+                sectionBaseline={null}
               />
             </td>
           </tr>
@@ -140,9 +170,9 @@ export class App extends React.Component<{}, IState> {
                 symmetrical={false}
                 width={canvasWidth}
                 height={canvasHeight}
-                samples={sidePoints}
+                contour={sidePoints}
                 maxY={boxSize.z}
-                onChange={(newPoints, newWheels) => {
+                onCountourChange={(newPoints, newWheels) => {
                   modifyDesign({
                     sidePoints: newPoints,                    
                     wheels: newWheels || []
@@ -151,27 +181,23 @@ export class App extends React.Component<{}, IState> {
                 wheels={wheels}
                 wheelDrawing={wheelDrawingType.Side}
                 sections={boxSize.y}
-                onSectionSelected={s => {
+                onSectionSelected={(show, section) => {
                   this.setState({
                     currentSectionData: {
                       ...currentSectionData,
-                      side: s
+                      side: show ? section : null
                     }
                   })
                 }}
                 onSectionChanged={(sections, points) => {}}
+                section={null/*section.side.map((p, idx) => ({ x: idx, y: p.y }))*/}
+                sectionBaseline={null}
               />
             </td>
             <td>
               <AppScene 
-                bodyPoints={boxSize}
-                sidePoints={sidePoints} 
-                frontPoints={frontPoints} 
-                topPoints={topPoints}
+                design={design}
                 renderSettings={renderSettings}
-                colorEven={colorEven}
-                colorOdd={colorOdd}
-                wheels={wheels}
               />
               </td>
           </tr>

@@ -9,7 +9,7 @@ interface IProps extends ISideEditorProps {
 }
 
 interface IState {
-    samples: IPoint2D[];
+    contour: IPoint2D[];
     wheels: IWheelModel[] | null;
 }
 
@@ -20,22 +20,34 @@ export class ModalSideEditor extends React.Component<IProps, IState> {
         super(props);
 
         this.state = {
-            samples: [],
+            contour: [],
             wheels: null
         }
     }
 
     componentDidMount() {
-        const { samples, wheels } = this.props;
+        const { contour, wheels } = this.props;
         this.setState({
-            samples: samples.map((s): IPoint2D => ({ x: s.x, y: s.y })),
+            contour: contour.map((s): IPoint2D => ({ x: s.x, y: s.y })),
             wheels: wheels ? wheels.map(w => Tools.clone(w)) : null
         })
     }
 
     render() {
-        const { id, title, symmetrical, maxY, onChange, wheelDrawing, sections, onSectionSelected, onSectionChanged} = this.props;
-        const { samples, wheels } = this.state;
+        const { 
+            id, 
+            title, 
+            symmetrical, 
+            maxY, 
+            onCountourChange, 
+            wheelDrawing, 
+            sections, 
+            onSectionSelected, 
+            onSectionChanged,
+            section,
+            sectionBaseline
+        } = this.props;
+        const { contour, wheels } = this.state;
 
         const width = (this._container?.clientWidth ?? 0) * 0.9;
         const height = (this._container?.clientHeight ?? 0) * 0.9;
@@ -49,20 +61,22 @@ export class ModalSideEditor extends React.Component<IProps, IState> {
                     symmetrical={symmetrical}
                     width={width}
                     height={height}
-                    samples={samples} 
+                    contour={contour} 
                     maxY={maxY}
-                    onChange={(newSamples, newWheels) => {
+                    onCountourChange={(newSamples, newWheels) => {
                         this.setState({
-                            samples: newSamples,
+                            contour: newSamples,
                             wheels: newWheels
                         }, 
-                        () => onChange(this.state.samples, this.state.wheels))
+                        () => onCountourChange(this.state.contour, this.state.wheels))
                     }}
                     wheels={wheels}
                     wheelDrawing={wheelDrawing}
                     sections={sections}
+                    sectionBaseline={sectionBaseline}
                     onSectionChanged={onSectionChanged}
                     onSectionSelected={onSectionSelected}
+                    section={section}
                 /> : null
                 }
             </div>

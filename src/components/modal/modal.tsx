@@ -76,6 +76,22 @@ export class Dialogs {
         })
     }
 
+    static async Notification(title: string, body: JSX.Element | null = null): Promise<boolean> {
+        return await Dialogs.Modal({
+            title,
+            icon: "AiOutlineWarning",
+            body: body,
+            buttonsFactory: (close) => {
+                return [
+                    {
+                        label: "Cancel",
+                        onClick: () => close(false)
+                    }
+                ]
+            }
+        })
+    }
+
     static async Modal(dialog: IModalDialog): Promise<boolean> {
         return new Promise<boolean>((resolve, reject) => {
             const buttons = dialog

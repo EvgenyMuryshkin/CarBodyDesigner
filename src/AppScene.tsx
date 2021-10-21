@@ -2,23 +2,17 @@ import React from "react"
 import * as THREE from 'three';
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { BodyShape } from "./BodyShape";
-import { IPoint2D, IPoint3D, IRenderSettings } from "./lib";
+import { IRenderSettings } from "./lib";
 import { Vector3 } from "three";
 import { generationParity } from "./SidePlane";
 import { Subject, debounce, Subscription, interval } from "rxjs";
-import { IWheelModel } from "./components/drawing-model";
+import { IDesign } from "./DesignStore";
 // https://dustinpfister.github.io/2018/04/13/threejs-orbit-controls/
 // https://stackoverflow.com/questions/2368784/draw-on-html5-canvas-using-a-mouse
 // https://threejs.org/docs/#examples/en/controls/OrbitControls
 
 export interface IProps {
-    bodyPoints: IPoint3D;
-    sidePoints: IPoint2D[];
-    frontPoints: IPoint2D[];
-    topPoints: IPoint2D[];
-    colorOdd: number;
-    colorEven: number;
-    wheels: IWheelModel[];
+    design: IDesign;
     renderSettings: IRenderSettings;
 }
 
@@ -79,15 +73,19 @@ export class AppScene extends React.Component<IProps, IState> {
         this.bodyMesh = [];
 
         const { 
-            bodyPoints, 
-            sidePoints, 
-            frontPoints, 
-            topPoints, 
-            renderSettings,
-            colorOdd, 
-            colorEven,
-            wheels
+            design,
+            renderSettings
         } = this.props;
+        const { 
+            boxSize, 
+            frontPoints, 
+            sidePoints, 
+            topPoints, 
+            colorOdd, 
+            colorEven, 
+            wheels, 
+            frontSegments 
+        } = design;
 
         const { flatShading, wireframes } = renderSettings;
         const wireframesColor = 0x00FF00;
@@ -98,8 +96,9 @@ export class AppScene extends React.Component<IProps, IState> {
         ];
 
         for (const p of parts) {
-            const body = new BodyShape(bodyPoints.x, bodyPoints.y, bodyPoints.z, p.parity);
-            body.apply(sidePoints, frontPoints, topPoints, wheels);
+            const body = new BodyShape(boxSize.x, boxSize.y, boxSize.z, p.parity);
+            body.applyContour(sidePoints, frontPoints, topPoints, wheels, frontSegments);
+
             //const material = new THREE.MeshBasicMaterial( { color: 0xffff00, wireframe: true } );
             //const material = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
             const material = new THREE.MeshPhongMaterial({ 

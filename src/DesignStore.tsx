@@ -11,6 +11,7 @@ export interface IDesign {
     colorOdd: number;
     colorEven: number;
     wheels: IWheelModel[];
+    frontSegments: IPoint2D[][];
 }
   
 export interface IStorageModel {
@@ -47,7 +48,9 @@ export class DesignStore {
             d.wheels.forEach(w => {
                 if (!w.offset) w.offset = 10;
                 if (!w.width) w.width = 10;
-            })
+            });
+
+            if (!d.frontSegments) d.frontSegments = [];
         });
         
         return model;
@@ -98,7 +101,7 @@ export class DesignStore {
 
         const newState: IDesignStoreState = {
             storageModel: storageModel, 
-            design: storageModel.designs.find(d => d.name === design?.name) || null
+            design: storageModel.designs.find(d => d.name === design?.name) || storageModel.designs[0]
         }
 
         this._stream.next(newState);
@@ -118,7 +121,8 @@ export class DesignStore {
             topPoints,
             colorOdd: 0xEB7D09,
             colorEven: 0x000000,
-            wheels: []
+            wheels: [],
+            frontSegments: []
         }
     }
 }

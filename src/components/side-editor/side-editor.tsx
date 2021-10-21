@@ -1,5 +1,5 @@
 import * as React from "react"
-import { IPoint2D } from "../../lib";
+import { Generate, IPoint2D, Tools } from "../../lib";
 import { DrawingCanvas, IDrawingCanvasProps } from "../drawing-canvas/drawing-canvas";
 import { drawingMode } from "../drawing-model";
 import { Icon, IconSeparator, IIconProps } from "../icon/icon";
@@ -13,7 +13,8 @@ export interface ISideEditorProps extends IDrawingCanvasProps {
 
 interface IState {
     mode: drawingMode;
-    currentSection: number | null;
+    currentSection: number;
+    showSectionSelector: boolean;
 }
 
 export class SideEditor extends React.Component<ISideEditorProps, IState> {
@@ -21,79 +22,150 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
         super(props);
         this.state = {
             mode: drawingMode.Contour,
-            currentSection: null
+            currentSection: 0,
+            showSectionSelector: false
+        }
+    }
+
+    get currentSamples(): IPoint2D[] {
+        const { contour, section, sectionBaseline } = this.props;
+        const { showSectionSelector } = this.state;
+        const sectionPoints = section || sectionBaseline;
+
+        const source = 
+            showSectionSelector && sectionPoints 
+            ? sectionPoints
+            : contour;
+        
+        return source.map(s => ({ ...s }));
+    }
+
+    set currentSamples(newData: IPoint2D[]) {
+        const { wheels, onCountourChange, onSectionChanged } = this.props;
+        const { showSectionSelector, currentSection } = this.state;
+
+        if (showSectionSelector) {
+            onSectionChanged([currentSection], newData);
+        }
+        else {
+            onCountourChange(newData, wheels);
         }
     }
 
     moveUp() {
-        const { maxY, wheels, onChange } = this.props;
-        const samples = [...this.props.samples];
+        const { maxY } = this.props;
+        const samples = this.currentSamples;
         if (samples.some(s => s.y > maxY - 1)) return;
         samples.forEach(s => s.y++);
-        onChange(samples, wheels);
+        this.currentSamples = samples;
     }
 
     moveDown() {
-        const { wheels, onChange } = this.props;
-        const samples = [...this.props.samples];
+        const samples = this.currentSamples;
         if (samples.some(s => s.y < 1)) return;
         samples.forEach(s => s.y--);
-        onChange(samples, wheels);
+        this.currentSamples = samples;
     }
     
     allUp() {
-        const { maxY, wheels, onChange } = this.props;
-        const samples = [...this.props.samples];
+        const { maxY } = this.props;
+        const samples = this.currentSamples;
         samples.forEach(s => s.y = maxY);
-        onChange(samples, wheels);
+        this.currentSamples = samples;
 
     }
 
     allDown() {
-        const { wheels, onChange } = this.props;
-        const samples = [...this.props.samples];
+        const samples = this.currentSamples;
         samples.forEach(s => s.y = 0);
-        onChange(samples, wheels);
+        this.currentSamples = samples;
     }
 
     async fullscreenEdit() {
-        const { title, samples, wheels, onChange } = this.props;
-        let newSamples = samples;
+        const { title, contour, wheels, onCountourChange } = this.props;
+        let newSamples = contour;
         let newWheels = wheels;
 
         if (await Dialogs.Modal({
             title: title,
-            body: <ModalSideEditor {...this.props} onChange={(s, w) => {
+            body: <ModalSideEditor {...this.props} onCountourChange={(s, w) => {
                 newSamples = s;
                 newWheels = w;
             }}/>,
             buttonsFactory: Dialogs.OKCancelButtons
         })) {
-            onChange(newSamples, newWheels);
+            onCountourChange(newSamples, newWheels);
         }
     }
 
     smooth() {
-        const { onChange, samples, wheels } = this.props;
-        const newSamples = samples
-        .map((s, idx): IPoint2D => {
-            if (idx === 0 || idx === samples.length - 1) return s;
-            return {
-                x: s.x,
-                y: (samples[idx-1].y + samples[idx].y + samples[idx + 1].y) / 3
-            }
-        });
-        onChange(newSamples, wheels);
+        const { currentSamples } = this;
+        const newSamples = this
+            .currentSamples
+            .map((s, idx): IPoint2D => {
+                if (idx === 0 || idx === currentSamples.length - 1) return s;
+                return {
+                    x: s.x,
+                    y: (currentSamples[idx-1].y + currentSamples[idx].y + currentSamples[idx + 1].y) / 3
+                }
+            });
+        this.currentSamples = newSamples;
     }
 
+    async applyToRemaining() {
+        const { sections, onSectionChanged } = this.props;
+        const { currentSection, showSectionSelector } = this.state;
+        if (!showSectionSelector) {
+            await Dialogs.Notification("Section editor is disabled");
+            return;
+        }
+
+        if (!await Dialogs.Confirm("Apply current contour to the rest of the model?")) return;
+
+        const { currentSamples } = this;
+
+        onSectionChanged(Generate.inclusive(currentSection, sections), currentSamples);
+    }
+
+    async removeSection() {
+        const { onSectionChanged } = this.props;
+        const { currentSection } = this.state;
+
+        if (!await Dialogs.Confirm("Revert current section to baseline?")) return;
+        onSectionChanged([currentSection], null);
+    }
+
+    async lockSection() {
+        const { sectionBaseline, onSectionChanged } = this.props;
+        const { currentSection } = this.state;
+
+        if (!await Dialogs.Confirm("Lock current section to baseline?")) return;
+        onSectionChanged([currentSection], sectionBaseline); 
+    }
+
+    async interpolateSections() {
+
+    }
+    
     renderMenu() {
-        const { wheels } = this.props;
-        const { mode } = this.state;
+        const { wheels, onSectionSelected } = this.props;
+        const { mode, showSectionSelector, currentSection } = this.state;
         const iconParams: Partial<IIconProps> = {
-            bordered: true,
-            size: "small"
+            bordered: true
         }
         
+        const toggleSection = () => {
+            this.setState({ showSectionSelector: !showSectionSelector }, () => {
+                onSectionSelected(this.state.showSectionSelector, currentSection);
+            })
+        }
+
+        const sectionParams: Partial<IIconProps> = {
+            ...iconParams,
+            readOnly: !showSectionSelector,
+            readOnlyTitle: "Turn on section editor"
+        };
+
         return (
             <div className="menu menu-top">
                 <Icon type="AiOutlineFullscreen" title="Fullscreen edit" {...iconParams} onClick={async () => await this.fullscreenEdit()}/>
@@ -106,6 +178,34 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
                 <Icon type="AiOutlineBorderTop" title="All Up" {...iconParams} onClick={() => this.allUp()}/>
                 <Icon type="AiOutlineBorderBottom" title="All Down" {...iconParams} onClick={() => this.allDown()}/>
                 <Icon type="GiWhiplash" title="Smooth" {...iconParams} onClick={() => this.smooth()}/>
+                <IconSeparator {...iconParams}/>
+                <Icon type="GiSlicedBread" 
+                    title="Slice Edit" 
+                    {...iconParams} 
+                    selected={showSectionSelector} 
+                    onClick={() => toggleSection()}
+                />
+                <Icon 
+                    type="AiFillLock" 
+                    title="Lock section"
+                    {...sectionParams} 
+                    onClick={() => this.lockSection()} 
+                    />
+                <Icon 
+                    type="RiDeleteBack2Line" 
+                    title="Revert section"
+                    {...sectionParams} 
+                    onClick={() => this.removeSection()}
+                    />
+                <Icon 
+                    type="TiArrowForwardOutline" 
+                    title="Apply to remaining sections" 
+                    {...sectionParams} 
+                    onClick={() => this.applyToRemaining()} />
+                <Icon
+                    type="AiOutlineFunction" {...sectionParams}
+                    title="Interpolate sections"
+                    onClick={() => this.interpolateSections()}/>
             </div>
         )
     }
@@ -118,15 +218,17 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
             height, 
             maxY, 
             symmetrical, 
-            samples, 
-            onChange, 
+            contour, 
+            onCountourChange, 
             wheels, 
             wheelDrawing, 
             sections,
+            section,
+            sectionBaseline,
             onSectionChanged,
             onSectionSelected
         } = this.props;
-        const { mode, currentSection } = this.state;
+        const { mode, showSectionSelector, currentSection } = this.state;
 
         const titleParts = [
             title,
@@ -142,21 +244,25 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
                         symmetrical={symmetrical}
                         width={width}
                         height={height}
-                        samples={samples} 
+                        contour={contour} 
                         maxY={maxY}
                         mode={mode}
-                        onChange={onChange}
+                        onCountourChange={onCountourChange}
                         wheels={wheels}
                         wheelDrawing={wheelDrawing}
                         sections={sections}
                         onSectionChanged={onSectionChanged}
-                        onSectionSelected={(s) => {
+                        showSectionSelector={showSectionSelector}
+                        section={section}
+                        sectionBaseline={sectionBaseline}
+                        onSectionSelected={(show, s) => {
                             this.setState({ 
                                 currentSection: s 
                             }, () => {
-                                onSectionSelected(s);
+                                onSectionSelected(showSectionSelector, s);
                             })                            
                         }}
+                        sectionIndex={currentSection}
                     />
                 </div>
             </div>

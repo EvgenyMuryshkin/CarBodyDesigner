@@ -1,7 +1,23 @@
 import { BufferGeometry } from "three";
 import { IWheelModel } from "./components/drawing-model";
-import { IPoint2D, IPoint3D, ISectionData, ISectionPoints, Tools } from "./lib";
+import { IDesign } from "./DesignStore";
+import { Generate, IPoint2D, IPoint3D, ISectionData, ISectionPoints, Tools } from "./lib";
 import { generationMode, generationParity, SidePlane } from "./SidePlane";
+
+export class CountourQuery
+{
+    constructor(private countour: IPoint2D[], private segments: IPoint2D[][]) {
+
+    }
+
+    query(l: number) {
+        const {countour, segments } = this;
+        for (let i = l; i >= 0; i--)
+            if (segments[i]) return segments[i];
+
+        return countour;
+    }
+}
 
 export class BodyShape {
     private left: SidePlane;
@@ -95,11 +111,12 @@ export class BodyShape {
         });  
     }
 
-    public apply(
+    public applyContour(
         sidePoints: IPoint2D[],
-        frontPoints: IPoint2D[],
+        contourFrontPoints: IPoint2D[],
         topPoints: IPoint2D[],
-        wheels: IWheelModel[]
+        wheels: IWheelModel[],
+        frontSegments: IPoint2D[][]
     ) {
         const { lengthPoints, widthPoints, heightPoints } = this;
 
@@ -107,8 +124,13 @@ export class BodyShape {
             return (value - offset) * scale + offset;
         }
 
+        const contourQuery = new CountourQuery(contourFrontPoints, frontSegments);
+        const frontPoints = (l: number) => {
+            return contourQuery.query(l);
+        }
+
         this.left.apply((l, w, p) => {
-            const frontScale = frontPoints[widthPoints - 1].y / heightPoints;
+            const frontScale = frontPoints(l)[widthPoints - 1].y / heightPoints;
             const yScale = sidePoints[l].y / heightPoints;
             const zScale = topPoints[l].y / widthPoints;
 
@@ -135,7 +157,7 @@ export class BodyShape {
         });
 
         this.right.apply((l, w, p) => {
-            const frontScale = frontPoints[0].y / heightPoints;
+            const frontScale = frontPoints(l)[0].y / heightPoints;
             const yScale = sidePoints[l].y / heightPoints;
             const zScale = topPoints[l].y / widthPoints;
 
@@ -162,7 +184,7 @@ export class BodyShape {
         });
 
         this.top.apply((l, w, p) => {
-            const frontScale = frontPoints[w].y / heightPoints;
+            const frontScale = frontPoints(l)[w].y / heightPoints;
             const yScale = sidePoints[l].y / heightPoints;
             const zScale = topPoints[l].y / widthPoints;
 
@@ -176,7 +198,7 @@ export class BodyShape {
         });
 
         this.bottom.apply((l, w, p) => {
-            const frontScale = frontPoints[w].y / heightPoints;
+            const frontScale = frontPoints(l)[w].y / heightPoints;
             const yScale = sidePoints[l].y / heightPoints;
             const zScale = topPoints[l].y / widthPoints;
 
@@ -211,7 +233,7 @@ export class BodyShape {
         });
 
         this.front.apply((l, w, p) => {
-            const frontScale = frontPoints[l].y / heightPoints;
+            const frontScale = frontPoints(0)[l].y / heightPoints;
             const yScale = sidePoints[0].y / heightPoints;
             const zScale = topPoints[0].y / widthPoints;
 
@@ -225,7 +247,7 @@ export class BodyShape {
         });
 
         this.back.apply((l, w, p) => {
-            const frontScale = frontPoints[l].y / heightPoints;
+            const frontScale = frontPoints(this.top.length - 1)[l].y / heightPoints;
             const yScale = sidePoints[lengthPoints - 1].y / heightPoints;
             const zScale = topPoints[lengthPoints - 1].y / widthPoints;
 
@@ -239,12 +261,104 @@ export class BodyShape {
         });
     }
 
-    public sectionPoints(section: ISectionData): ISectionPoints {
-        return {
+
+    /*
+    public applySegments(segments: IPoint2D[][]) {
+        
+        this.top.apply((l, w, p) => {
+            p.handlers.push((p) => {
+                if (segments[l]?.length) {
+                    const value = segments[l][w];
+                    return {
+                        x: p.x,
+                        y: value.y,// p.y,
+                        z: p.z
+                    }
+                }
+
+                return p;
+            });
+        });
+
+        this.front.apply((l, w, p) => {
+            p.handlers.push((p) => {
+                if (w === (this.front.width - 1) && segments[0]?.length) {
+                    const value = segments[0][l];
+                    return {
+                        x: p.x,
+                        y: value.y, //p.y,
+                        z: p.z
+                    }
+                }
+                return p;
+            });
+        })
+
+        this.back.apply((l, w, p) => {
+            p.handlers.push((p) => {
+                if (w === (this.back.width - 1) && segments[this.lengthPoints - 1]?.length) {
+                    const value = segments[this.lengthPoints - 1][l];
+                    console.log(value);
+                    return {
+                        x: p.x,
+                        y: value.y, //p.y,
+                        z: p.z
+                    }
+                }
+                return p;
+            });
+        })
+    }
+    */
+
+    public sectionPoints(
+        design: IDesign,
+        section: ISectionData): ISectionPoints {
+        const { left, right, front, back, top, bottom } = this;
+
+        const result : ISectionPoints = {
             front: [],
             side: [],
             top: []
         }
+
+        if (section === null || [section.front, section.side, section.top].every(p => p === null)) return result;
+
+        const transformed = top.transformedVertices(1);
+
+        if (section.front !== null) {
+            if (design.frontSegments[section.front]) {
+                result.front.push(...design.frontSegments[section.front]);
+            }
+            else {
+                const sourcePoints = Generate
+                .range(0, front.length)
+                .map(y => transformed[y + (section.front || 0) * front.length])
+                ;
+
+                result.front.push(...sourcePoints.map(p => ({ x: p.x, y: p.y })));
+            }
+        }
+
+        if (section.top !== null) {
+            const sourcePoints = Generate
+                .range(0, top.length)
+                .map(y => transformed[(section.top || 0) + y * top.width])
+                ;
+
+            result.top.push(...sourcePoints.map(p => ({ x: p.x, y: p.z })));
+        }
+
+        if (section.side !== null) {
+            const sourcePoints = Generate
+                .range(0, top.length)
+                .map(y => transformed[(section.side || 0) + y * top.width])
+                ;
+
+            result.side.push(...sourcePoints.map(p => ({ x: p.x, y: p.y })));
+        }
+
+        return result;
     }
 
     public get geometry(): BufferGeometry[] {

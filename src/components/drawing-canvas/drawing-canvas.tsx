@@ -11,12 +11,14 @@ export interface IDrawingCanvasProps {
     height: number;
     width: number;
     maxY: number;
-    samples: IPoint2D[];
+    contour: IPoint2D[];
+    section: IPoint2D[] | null;
+    sectionBaseline: IPoint2D[] | null;
     wheelDrawing: wheelDrawingType;
     wheels: IWheelModel[] | null;
-    onChange: (samples: IPoint2D[], wheels: IWheelModel[] | null) => void;
-    onSectionSelected: (section: number) => void;
-    onSectionChanged: (section: number, points: IPoint2D[]) => void;
+    onCountourChange: (samples: IPoint2D[], wheels: IWheelModel[] | null) => void;
+    onSectionSelected: (showSectionSelector: boolean, section: number) => void;
+    onSectionChanged: (sections: number[], points: IPoint2D[] | null) => void;
     sections: number;
 }
 
@@ -39,6 +41,8 @@ interface IWheelData {
 
 interface IProps extends IDrawingCanvasProps {
     mode: drawingMode;
+    showSectionSelector: boolean;
+    sectionIndex: number;
 }
 
 interface IState {
@@ -49,8 +53,6 @@ interface IState {
     scale: number;
     wheelMode: wheelDrawingMode;
     wheelIndex: number;
-    showSectionSelector: boolean;
-    sectionIndex: number;
 }
 
 export class DrawingCanvas extends Component<IProps, IState> {
@@ -66,19 +68,15 @@ export class DrawingCanvas extends Component<IProps, IState> {
         super(props);
         const sectionSelectorHeight = 25;
         const scale = Math.min(
-            Math.floor(props.width / props.samples.length),
+            Math.floor(props.width / props.contour.length),
             Math.floor((props.height - sectionSelectorHeight) / props.maxY)
         ) 
         this.state = {
-            //width: props.width,
-            //height: props.height,
             scale: scale,
             margin: 25,
             sectionSelectorHeight,
             wheelMode: wheelDrawingMode.Create,
-            wheelIndex: -1,
-            showSectionSelector: false,
-            sectionIndex: 0
+            wheelIndex: -1
         }
 
         this.onMouseUp = this.onMouseUp.bind(this);
@@ -94,6 +92,29 @@ export class DrawingCanvas extends Component<IProps, IState> {
         document.removeEventListener("mouseup", this.onMouseUp);
     }
 
+    get currentSamples(): IPoint2D[] {
+        const { contour, section, sectionBaseline, showSectionSelector } = this.props;
+
+        const sectionPoints = section || sectionBaseline;
+        const source = 
+            showSectionSelector && sectionPoints
+            ? sectionPoints
+            : contour;
+        
+        return source.map(s => ({ ...s }));
+    }
+
+    set currentSamples(newData: IPoint2D[]) {
+        const { wheels, showSectionSelector, sectionIndex, onCountourChange, onSectionChanged } = this.props;
+
+        if (showSectionSelector) {
+            onSectionChanged([sectionIndex], newData);
+        }
+        else {
+            onCountourChange(newData, wheels);
+        }
+    }
+
     mouseDisconnected() {
         this.enabled = false;
         this.lastPoint = null;
@@ -101,10 +122,10 @@ export class DrawingCanvas extends Component<IProps, IState> {
             wheelMode: wheelDrawingMode.Create,
             wheelIndex: -1
         }, () => {
-            const { samples, wheels, onChange } = this.props;
+            const { contour, wheels, onCountourChange } = this.props;
             if (wheels) {
                 const validWheels = wheels.filter(w => w.arcRadius > 2);
-                onChange(samples, validWheels);     
+                onCountourChange(contour, validWheels);     
             }
         });
     }
@@ -123,10 +144,10 @@ export class DrawingCanvas extends Component<IProps, IState> {
     }
 
     drawGrid(ctx: CanvasRenderingContext2D) {
-        const { samples, maxY } = this.props;
+        const { contour, maxY } = this.props;
         const { scale, margin } = this.state;
         
-        const width = (samples.length - 1) * scale;
+        const width = (contour.length - 1) * scale;
         const height = maxY * scale;
 
         ctx.clearRect(0, 0, width + 2 * margin, height + 2 * margin);
@@ -141,7 +162,7 @@ export class DrawingCanvas extends Component<IProps, IState> {
 
         ctx.setLineDash([1, 2])
 
-        for (const col of Generate.range(0, samples.length)) {
+        for (const col of Generate.range(0, contour.length)) {
             ctx.moveTo(margin + col * scale, margin);
             ctx.lineTo(margin + col * scale, margin + height);    
         }
@@ -169,9 +190,8 @@ export class DrawingCanvas extends Component<IProps, IState> {
         };
     }
 
-    samplePoint(idx: number): IPoint2D | null {
-        const { samples } = this.props;
-        return this.scalePoint(samples[idx]);
+    samplePoint(points: IPoint2D[], idx: number): IPoint2D | null {
+        return this.scalePoint(points[idx]);
     }
 
     scalePoint(pt: IPoint2D | null) {
@@ -303,6 +323,28 @@ export class DrawingCanvas extends Component<IProps, IState> {
         }
     }
 
+    drawPoints(ctx: CanvasRenderingContext2D, points: IPoint2D[], color: string) {
+        const { margin } = this.state;
+
+        const currentStyle = ctx.strokeStyle;
+        ctx.lineWidth = 3;
+        ctx.imageSmoothingEnabled = true;
+        ctx.strokeStyle = color;
+
+        ctx.beginPath();
+
+        for (let i = 0; i < points.length - 1; i++) {
+            const from = this.translate(this.samplePoint(points, i));
+            const to = this.translate(this.samplePoint(points, i + 1));
+
+            ctx.moveTo(margin + from.x, margin + from.y);
+            ctx.lineTo(margin + to.x, margin + to.y);
+        }
+
+        ctx.stroke();
+        ctx.strokeStyle = currentStyle;
+    }
+
     drawSignal() {
         const { canvas } = this;
         if (!canvas) return;
@@ -312,23 +354,19 @@ export class DrawingCanvas extends Component<IProps, IState> {
 
         this.drawGrid(ctx);
 
-        const { samples } = this.props;
-        const { margin } = this.state;
+        const { contour, section, sectionBaseline, showSectionSelector } = this.props;
 
-        ctx.lineWidth = 3;
-        ctx.imageSmoothingEnabled = true;
+        if (showSectionSelector) {
+            if (sectionBaseline)
+                this.drawPoints(ctx, sectionBaseline, "gray");
 
-        ctx.beginPath();
-
-        for (let i = 0; i < samples.length - 1; i++) {
-            const from = this.translate(this.samplePoint(i));
-            const to = this.translate(this.samplePoint(i + 1));
-
-            ctx.moveTo(margin + from.x, margin + from.y);
-            ctx.lineTo(margin + to.x, margin + to.y);
+            if (section)
+                this.drawPoints(ctx, section, "black");
+        }
+        else {
+            this.drawPoints(ctx, contour, "black");
         }
 
-        ctx.stroke();
 
         this.drawWheels(ctx);
     }
@@ -346,7 +384,7 @@ export class DrawingCanvas extends Component<IProps, IState> {
     }
 
     reflect(pt: IPoint2D): IPoint2D {
-        const { samples } = this.props;
+        const samples = this.currentSamples;
         const halfIndex = (samples.length - 1) / 2;
 
         return {
@@ -356,8 +394,9 @@ export class DrawingCanvas extends Component<IProps, IState> {
     }
 
     processPoints(points: IPoint2D[]) {
-        const { symmetrical, wheels, onChange } = this.props;
-        const samples = [...this.props.samples];
+        const { symmetrical } = this.props;
+
+        const samples = this.currentSamples;
 
         const halfIndex = (samples.length - 1) / 2;
 
@@ -394,26 +433,25 @@ export class DrawingCanvas extends Component<IProps, IState> {
             this.lastPoint = pt;
         }
 
-        this.drawSignal();
-        onChange(samples, wheels);
+        this.currentSamples = samples;
     }
 
     onWheelChange(wheel: IWheelModel, wheelIndex: number) {
-        const { samples, wheels, onChange } = this.props;
+        const { contour, wheels, onCountourChange } = this.props;
         if (!wheels ) return;
 
         if (wheelIndex === -1) {
             this.setState({
                 wheelIndex: wheels.length
             }, () => {
-                onChange(samples, [...wheels, wheel])
+                onCountourChange(contour, [...wheels, wheel])
             })
         }
         else {
             this.setState({
                 wheelIndex: wheelIndex
             }, () => {
-                onChange(samples, wheels.map((w, idx) => idx === wheelIndex ? wheel : w))
+                onCountourChange(contour, wheels.map((w, idx) => idx === wheelIndex ? wheel : w))
             })
         }
     }
@@ -476,7 +514,7 @@ export class DrawingCanvas extends Component<IProps, IState> {
     };
 
     fromCanvasCoordinates(canvas: HTMLCanvasElement | null, e: React.MouseEvent<HTMLCanvasElement>): IPoint2D {
-        const { samples, maxY } = this.props;
+        const { contour, maxY } = this.props;
         const { scale, margin } = this.state;
 
         if (!canvas) return { x: 0, y: 0 };
@@ -487,14 +525,14 @@ export class DrawingCanvas extends Component<IProps, IState> {
             y: 0
         });
 
-        pt.x = Tools.withinRange(Math.round(pt.x / scale), 0, samples.length - 1);
+        pt.x = Tools.withinRange(Math.round(pt.x / scale), 0, contour.length - 1);
         pt.y = Tools.withinRange(pt.y / scale, 0, maxY);
 
         return pt;
     }
 
     setPosition(e: React.MouseEvent<HTMLCanvasElement>) {
-        const { samples, maxY, mode, wheelDrawing } = this.props;
+        const { contour, maxY, mode, wheelDrawing } = this.props;
         const { scale, margin, wheelMode } = this.state;
         if (!this.canvas) return;
         e.stopPropagation();
@@ -506,7 +544,7 @@ export class DrawingCanvas extends Component<IProps, IState> {
             y: e.clientY - rect.top - margin 
         });
         
-        pt.x = Tools.withinRange(Math.round(pt.x / scale), 0, samples.length - 1);
+        pt.x = Tools.withinRange(Math.round(pt.x / scale), 0, contour.length - 1);
         pt.y = Tools.withinRange(pt.y / scale, 0, maxY);
 
         const wheelData = this.wheelIndexFromPoint(pt);
@@ -525,11 +563,11 @@ export class DrawingCanvas extends Component<IProps, IState> {
             if (wheel) {
                 switch (wheelDrawing) {
                     case wheelDrawingType.Side: {
-                        pt.x = Tools.withinRange(pt.x, wheel.wheelRadius, samples.length - 1 - wheel.wheelRadius); 
+                        pt.x = Tools.withinRange(pt.x, wheel.wheelRadius, contour.length - 1 - wheel.wheelRadius); 
                         pt.y = Tools.withinRange(pt.y, 0, maxY - wheel.wheelRadius); 
                     } break;
                     case wheelDrawingType.Top: {
-                        pt.x = Tools.withinRange(pt.x, wheel.wheelRadius, samples.length - 1 - wheel.wheelRadius); 
+                        pt.x = Tools.withinRange(pt.x, wheel.wheelRadius, contour.length - 1 - wheel.wheelRadius); 
                         pt.y = Tools.withinRange(pt.y, 0, maxY); 
                     }
                 }
@@ -622,43 +660,28 @@ export class DrawingCanvas extends Component<IProps, IState> {
     }
 
     renderSectionSelector() {
-        const { id, onSectionChanged, sections } = this.props;
-        const { sectionIndex, showSectionSelector } = this.state;
+        const { id, onSectionChanged, onSectionSelected, sections, sectionIndex, showSectionSelector } = this.props;
 
         if (!onSectionChanged) return null;
+        if (!showSectionSelector) return null;
 
-        const selectorId = `${id}_sections`;
-        const sectionsToggler = (
-            <>
-                <input 
-                    id={selectorId}
-                    type="checkbox" 
-                    checked={showSectionSelector} 
-                    onChange={e => this.setState({ showSectionSelector: !showSectionSelector })}            
-                />
-                <label htmlFor={selectorId}>Sections</label>
-            </>
-        )
-
-
-        if (!showSectionSelector) {
-            return sectionsToggler;
+        const sectionSelected = (section: number) => {
+            onSectionSelected(showSectionSelector, section)
         }
 
         const max = sections - 1;
         return (
-            <div>
-                {sectionsToggler}
-                <input type="range" min={0} max={max} value={sectionIndex} onChange={e => this.setState({ sectionIndex: parseInt(e.target.value) })}/>
-                <input type="number" value={sectionIndex} min={0} max={max} onChange={e => this.setState({ sectionIndex: parseInt(e.target.value) })}/>
+            <div className="section-selector">
+                <input type="range" min={0} max={max} value={sectionIndex} onChange={e => sectionSelected(parseInt(e.target.value))}/>
+                <input type="number" value={sectionIndex} min={0} max={max} onChange={e => sectionSelected(parseInt(e.target.value))}/>
             </div>
         );
     }
 
     render() {
-        const { samples, maxY } = this.props;
+        const { contour, maxY } = this.props;
         const { scale, margin } = this.state;
-        const width = samples.length * scale;
+        const width = contour.length * scale;
         const height = maxY * scale;
 
         return (
