@@ -371,5 +371,5 @@ export class BodyShape {
             top,
             bottom
         ].map(p => p.geometry(5));
-    }
+    }   
 }

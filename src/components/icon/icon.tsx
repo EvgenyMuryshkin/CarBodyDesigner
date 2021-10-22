@@ -58,6 +58,7 @@ export interface IIconProps extends IIconElementProps {
     readOnlyTitle?: string;
     selected?: boolean;
     readOnly?: boolean;
+    hidden?: boolean; 
     bordered?: boolean;
     onClick?: () => void;
 }
@@ -70,6 +71,7 @@ export class Icon extends React.Component<IIconProps> {
             readOnlyTitle,
             bordered = false, 
             readOnly = false, 
+            hidden = false,
             className, 
             selected = false, 
             size = "medium", 
@@ -81,6 +83,7 @@ export class Icon extends React.Component<IIconProps> {
             "icon-selected": selected,
             "icon-bordered": bordered,
             "icon-readonly": readOnly,
+            "icon-hidden": hidden,
             [`icon-${size}`]: true
         };
 

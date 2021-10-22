@@ -9,6 +9,7 @@ import "./side-editor.scss";
 
 export interface ISideEditorProps extends IDrawingCanvasProps {
     title: string;
+    onInterpolateSections?: () => void;
 }
 
 interface IState {
@@ -144,11 +145,12 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
     }
 
     async interpolateSections() {
-
+        const { onInterpolateSections } = this.props;
+        onInterpolateSections?.();
     }
     
     renderMenu() {
-        const { wheels, onSectionSelected } = this.props;
+        const { wheels, onSectionSelected, onInterpolateSections } = this.props;
         const { mode, showSectionSelector, currentSection } = this.state;
         const iconParams: Partial<IIconProps> = {
             bordered: true
@@ -205,6 +207,7 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
                 <Icon
                     type="AiOutlineFunction" {...sectionParams}
                     title="Interpolate sections"
+                    hidden={!onInterpolateSections}
                     onClick={() => this.interpolateSections()}/>
             </div>
         )

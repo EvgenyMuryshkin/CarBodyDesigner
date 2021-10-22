@@ -7,6 +7,7 @@ import { Vector3 } from "three";
 import { generationParity } from "./SidePlane";
 import { Subject, debounce, Subscription, interval } from "rxjs";
 import { IDesign } from "./DesignStore";
+import { DesignTools } from "./DesignTools";
 // https://dustinpfister.github.io/2018/04/13/threejs-orbit-controls/
 // https://stackoverflow.com/questions/2368784/draw-on-html5-canvas-using-a-mouse
 // https://threejs.org/docs/#examples/en/controls/OrbitControls
@@ -95,9 +96,12 @@ export class AppScene extends React.Component<IProps, IState> {
             { parity: generationParity.Even, color: colorEven }          
         ];
 
+        const designTools = new DesignTools(design);
+        const interpolatedSegments = designTools.interpolateSections();
+    
         for (const p of parts) {
             const body = new BodyShape(boxSize.x, boxSize.y, boxSize.z, p.parity);
-            body.applyContour(sidePoints, frontPoints, topPoints, wheels, frontSegments);
+            body.applyContour(sidePoints, frontPoints, topPoints, wheels, interpolatedSegments);
 
             //const material = new THREE.MeshBasicMaterial( { color: 0xffff00, wireframe: true } );
             //const material = new THREE.MeshBasicMaterial( { color: 0xffff00 } );

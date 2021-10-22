@@ -26,6 +26,10 @@
         }
     }
 
+    .icon-hidden {
+        display:  none;
+    }
+    
     .icon-readonly {
         opacity: 0.5;
         &:hover {

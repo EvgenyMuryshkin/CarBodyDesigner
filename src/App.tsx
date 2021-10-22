@@ -1,7 +1,7 @@
 import React from 'react';
 import './App.scss';
 import { AppScene } from './AppScene';
-import { IRenderSettings, ISectionData, Tools } from './lib';
+import { Generate, IPoint2D, IRenderSettings, ISectionData, Tools } from './lib';
 import { ModalsComponent } from './components';
 import { DesignStore, IDesign, IDesignStoreState } from './DesignStore';
 import { SideEditor } from './components/side-editor';
@@ -9,6 +9,7 @@ import { wheelDrawingType } from './components/drawing-model';
 import { MainToolbar } from './MainToolbar';
 import { BodyShape, CountourQuery } from './BodyShape';
 import { generationParity } from './SidePlane';
+import { DesignTools } from './DesignTools';
 
 interface IState {
   designStore: DesignStore;
@@ -83,6 +84,16 @@ export class App extends React.Component<{}, IState> {
       ? contourQuery.query((currentSectionData.front || 0) - 1)
       : contourQuery.query(currentSectionData.front || 0);
 
+      /*
+    const designTools = new DesignTools(design);
+    const interpolatedSegments = designTools.interpolateSections();
+*/
+    const interpolateSections = () => {      
+      //Generate.range(0, boxSize.x).map(sectionIdx => {
+      //  console.log(sectionIdx, interpolatedSegments[sectionIdx]);
+      //})
+    }
+
     return (
       <table className="main-layout">
         <tbody>
@@ -128,6 +139,7 @@ export class App extends React.Component<{}, IState> {
                 }}
                 sectionBaseline={sectionBaseline}
                 section={section/*section.front.map((p, idx) => ({ x: idx, y: p.y }))*/}
+                onInterpolateSections={interpolateSections}
               />
             </td>
             <td>
