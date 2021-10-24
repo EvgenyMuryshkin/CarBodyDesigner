@@ -15,18 +15,31 @@ export interface IDesign {
 }
   
 export interface IStorageModel {
+    version: number;
     designs: IDesign[];
 }
 
+export interface IDesignStore {
+    replaceStorageModel(storageModel: IStorageModel): void;
+    appendStorageModel(storageModel: IStorageModel): void;
+}
+
 export interface IDesignStoreState {
+    designStore: IDesignStore;
     storageModel: IStorageModel;
     design: IDesign | null;
 }
 
 export class DesignStore {
-    _stream = new Rx.BehaviorSubject<IDesignStoreState>({ storageModel: { designs: [] }, design: null});
+    _stream: Rx.BehaviorSubject<IDesignStoreState>;
 
     constructor() {
+        this._stream = new Rx.BehaviorSubject<IDesignStoreState>({ 
+            designStore: this, 
+            storageModel: this.defaultStorageModel(), 
+            design: null
+        });
+
         this.updateDesign(null);
     }
 
@@ -38,11 +51,11 @@ export class DesignStore {
         return this._stream.value;
     }
 
-    loadFromLocalStorage() : IStorageModel {
-        const json = localStorage.getItem("Designs");
-        if (!json) return { designs: [this.newDesing("Default")] }
-    
-        const model = JSON.parse(json) as IStorageModel;
+    defaultStorageModel(): IStorageModel {
+        return { version: 1, designs: [this.newDesing("Default")] }
+    }
+
+    migrate(model: IStorageModel) {
         model.designs.forEach(d => {
             if (!d.wheels) d.wheels = [];
             d.wheels.forEach(w => {
@@ -52,6 +65,14 @@ export class DesignStore {
 
             if (!d.frontSegments) d.frontSegments = [];
         });
+    }
+
+    loadFromLocalStorage() : IStorageModel {
+        const json = localStorage.getItem("Designs");
+        if (!json) return this.defaultStorageModel();
+    
+        const model = JSON.parse(json) as IStorageModel;
+        this.migrate(model);
         
         return model;
     }
@@ -100,6 +121,7 @@ export class DesignStore {
         const storageModel = this.loadFromLocalStorage();
 
         const newState: IDesignStoreState = {
+            designStore: this,
             storageModel: storageModel, 
             design: storageModel.designs.find(d => d.name === design?.name) || storageModel.designs[0]
         }
@@ -124,5 +146,24 @@ export class DesignStore {
             wheels: [],
             frontSegments: []
         }
+    }
+
+    resetAll() {
+        this.saveStorageModel(this.defaultStorageModel());
+        this.setActiveDesign(null);
+    }
+
+    replaceStorageModel(storageModel: IStorageModel) {
+        this.migrate(storageModel);
+        this.saveStorageModel(storageModel ?? this.defaultStorageModel());
+        this.setActiveDesign(null);
+    }
+
+    appendStorageModel(appendStorageModel: IStorageModel) {
+        const { storageModel } = this._stream.value;
+
+        this.migrate(storageModel);
+        storageModel.designs.push(...appendStorageModel.designs);
+        this.replaceStorageModel(storageModel);
     }
 }

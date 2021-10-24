@@ -13,6 +13,8 @@ interface IState {
 }
 
 export class ModalsComponent extends React.Component<IProps, IState> {
+    internalDialogs: IGenericDialog[] = [];
+
     constructor(props: IProps) {
         super(props);
 
@@ -23,11 +25,14 @@ export class ModalsComponent extends React.Component<IProps, IState> {
 
     componentDidMount() {
         Dialogs.DialogsStream.subscribe(op => {
+            console.log("Add", op.add.map(o => o.title));
+            console.log("Remove", op.remove.map(o => o.title));
             const newDialogs = [
-                ...this.state.dialogs.filter(d => !op.remove.includes(d)),
+                ...this.internalDialogs.filter(d => !op.remove.includes(d)),
                 ...op.add
             ];
 
+            console.log("Current", newDialogs.map(d => d.title))
             this.setState({
                 dialogs: newDialogs
             })

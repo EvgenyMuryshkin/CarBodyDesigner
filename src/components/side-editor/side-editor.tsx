@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Generate, IPoint2D, Tools } from "../../lib";
+import { Generate, IPoint2D } from "../../lib";
 import { DrawingCanvas, IDrawingCanvasProps } from "../drawing-canvas/drawing-canvas";
 import { drawingMode } from "../drawing-model";
 import { Icon, IconSeparator, IIconProps } from "../icon/icon";
@@ -9,28 +9,25 @@ import "./side-editor.scss";
 
 export interface ISideEditorProps extends IDrawingCanvasProps {
     title: string;
+    currentSection: number;
+    showSectionSelector: boolean;
     onInterpolateSections?: () => void;
 }
 
 interface IState {
     mode: drawingMode;
-    currentSection: number;
-    showSectionSelector: boolean;
 }
 
 export class SideEditor extends React.Component<ISideEditorProps, IState> {
     constructor(props: ISideEditorProps) {
         super(props);
         this.state = {
-            mode: drawingMode.Contour,
-            currentSection: 0,
-            showSectionSelector: false
+            mode: drawingMode.Contour
         }
     }
 
     get currentSamples(): IPoint2D[] {
-        const { contour, section, sectionBaseline } = this.props;
-        const { showSectionSelector } = this.state;
+        const { contour, section, sectionBaseline, showSectionSelector } = this.props;
         const sectionPoints = section || sectionBaseline;
 
         const source = 
@@ -42,8 +39,7 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
     }
 
     set currentSamples(newData: IPoint2D[]) {
-        const { wheels, onCountourChange, onSectionChanged } = this.props;
-        const { showSectionSelector, currentSection } = this.state;
+        const { wheels, currentSection, showSectionSelector, onCountourChange, onSectionChanged } = this.props;
 
         if (showSectionSelector) {
             onSectionChanged([currentSection], newData);
@@ -114,8 +110,7 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
     }
 
     async applyToRemaining() {
-        const { sections, onSectionChanged } = this.props;
-        const { currentSection, showSectionSelector } = this.state;
+        const { showSectionSelector, currentSection, sections, onSectionChanged } = this.props;
         if (!showSectionSelector) {
             await Dialogs.Notification("Section editor is disabled");
             return;
@@ -129,16 +124,14 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
     }
 
     async removeSection() {
-        const { onSectionChanged } = this.props;
-        const { currentSection } = this.state;
+        const { currentSection, onSectionChanged } = this.props;
 
         if (!await Dialogs.Confirm("Revert current section to baseline?")) return;
         onSectionChanged([currentSection], null);
     }
 
     async lockSection() {
-        const { sectionBaseline, onSectionChanged } = this.props;
-        const { currentSection } = this.state;
+        const { currentSection, sectionBaseline, onSectionChanged } = this.props;
 
         if (!await Dialogs.Confirm("Lock current section to baseline?")) return;
         onSectionChanged([currentSection], sectionBaseline); 
@@ -150,16 +143,10 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
     }
     
     renderMenu() {
-        const { wheels, onSectionSelected, onInterpolateSections } = this.props;
-        const { mode, showSectionSelector, currentSection } = this.state;
+        const { showSectionSelector, currentSection, wheels, onSectionSelected, onInterpolateSections } = this.props;
+        const { mode } = this.state;
         const iconParams: Partial<IIconProps> = {
             bordered: true
-        }
-        
-        const toggleSection = () => {
-            this.setState({ showSectionSelector: !showSectionSelector }, () => {
-                onSectionSelected(this.state.showSectionSelector, currentSection);
-            })
         }
 
         const sectionParams: Partial<IIconProps> = {
@@ -185,7 +172,9 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
                     title="Slice Edit" 
                     {...iconParams} 
                     selected={showSectionSelector} 
-                    onClick={() => toggleSection()}
+                    onClick={() => {
+                        onSectionSelected(!showSectionSelector, currentSection)
+                    }}
                 />
                 <Icon 
                     type="AiFillLock" 
@@ -229,9 +218,13 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
             section,
             sectionBaseline,
             onSectionChanged,
-            onSectionSelected
+            onSectionSelected,
+            showSectionSelector,
+            currentSection,
+            design,
+            sectionMode
         } = this.props;
-        const { mode, showSectionSelector, currentSection } = this.state;
+        const { mode } = this.state;
 
         const titleParts = [
             title,
@@ -259,13 +252,11 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
                         section={section}
                         sectionBaseline={sectionBaseline}
                         onSectionSelected={(show, s) => {
-                            this.setState({ 
-                                currentSection: s 
-                            }, () => {
-                                onSectionSelected(showSectionSelector, s);
-                            })                            
+                            onSectionSelected(showSectionSelector, s);
                         }}
                         sectionIndex={currentSection}
+                        design={design}
+                        sectionMode={sectionMode}
                     />
                 </div>
             </div>

@@ -45,7 +45,11 @@ export class ModalSideEditor extends React.Component<IProps, IState> {
             onSectionSelected, 
             onSectionChanged,
             section,
-            sectionBaseline
+            sectionBaseline,
+            showSectionSelector,
+            currentSection,
+            design,
+            sectionMode
         } = this.props;
         const { contour, wheels } = this.state;
 
@@ -77,7 +81,11 @@ export class ModalSideEditor extends React.Component<IProps, IState> {
                     onSectionChanged={onSectionChanged}
                     onSectionSelected={onSectionSelected}
                     section={section}
-                /> : null
+                    showSectionSelector={showSectionSelector}
+                    currentSection={currentSection}
+                    design={design}
+                    sectionMode={sectionMode}
+                    /> : null
                 }
             </div>
         );

@@ -23,7 +23,8 @@ export interface IModalDialog {
     title: string;
     icon?: iconType;
     body?: JSX.Element | null;
-    buttonsFactory: (close: (result: boolean) => void) => IModalDialogButton[]
+    buttonsFactory: (close: (result: boolean) => void) => IModalDialogButton[];
+    genericDialogCallback?: (dialog: IGenericDialog) => void;
 }
 
 export class Dialogs {
@@ -76,7 +77,10 @@ export class Dialogs {
         })
     }
 
-    static async Notification(title: string, body: JSX.Element | null = null): Promise<boolean> {
+    static async Notification(
+        title: string, 
+        body: JSX.Element | null = null,
+        override: Partial<IModalDialog> = {}): Promise<boolean> {
         return await Dialogs.Modal({
             title,
             icon: "AiOutlineWarning",
@@ -88,7 +92,8 @@ export class Dialogs {
                         onClick: () => close(false)
                     }
                 ]
-            }
+            },
+            ...(override || {})
         })
     }
 
@@ -116,6 +121,7 @@ export class Dialogs {
                 footer: <div>{buttons}</div>
             }
 
+            dialog.genericDialogCallback?.(genericDialog);
             Dialogs.Add(genericDialog);
         })
     }

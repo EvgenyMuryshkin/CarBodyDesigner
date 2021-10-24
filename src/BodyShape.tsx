@@ -189,10 +189,30 @@ export class BodyShape {
             const zScale = topPoints[l].y / widthPoints;
 
             p.handlers = [(p) => {
-                return {
-                    x: p.x,
-                    y: p.y * yScale * frontScale,
-                    z: offsetScale(p.z, this.halfWidth, zScale)
+                const wheel = wheels.find(w => Tools.betweenInclusive(p.x, w.center.x - w.arcRadius, w.center.x + w.arcRadius));
+
+                if (wheel) {
+                    const wheelHeight = Tools.pythHB(wheel.arcRadius, wheel.center.x - p.x );
+
+                    const yTop = p.y * yScale * frontScale;
+                    const wheelTop = wheel.center.y + wheelHeight + 1;
+
+                    const y = Tools.betweenInclusive(p.z, this.halfWidth - wheel.offset, this.halfWidth + wheel.offset)
+                        ? yTop
+                        : Math.max(yTop, wheelTop);
+
+                    return {
+                        x: p.x,
+                        y: y,
+                        z: offsetScale(p.z, this.halfWidth, zScale)
+                    }         
+                }
+                else {
+                    return {
+                        x: p.x,
+                        y: p.y * yScale * frontScale,
+                        z: offsetScale(p.z, this.halfWidth, zScale)
+                    }
                 }
             }]
         });
@@ -204,14 +224,6 @@ export class BodyShape {
 
             p.handlers = [(p, allPoints) => {
                 const wheel = wheels.find(w => Tools.betweenInclusive(p.x, w.center.x - w.arcRadius, w.center.x + w.arcRadius));
-
-                const translate = (p: IPoint3D): IPoint3D => {
-                    return {
-                        x: p.x,
-                        y: p.y * yScale * frontScale,
-                        z: offsetScale(p.z, this.halfWidth, zScale)
-                    }
-                }
 
                 if (wheel) {
                     const wheelHeight = Tools.pythHB(wheel.arcRadius, wheel.center.x - p.x );
@@ -227,7 +239,11 @@ export class BodyShape {
                     }         
                 }
                 else {
-                    return translate(p);
+                    return {
+                        x: p.x,
+                        y: p.y * yScale * frontScale,
+                        z: offsetScale(p.z, this.halfWidth, zScale)
+                    }
                 }
             }]
         });
@@ -262,59 +278,14 @@ export class BodyShape {
     }
 
 
-    /*
-    public applySegments(segments: IPoint2D[][]) {
-        
-        this.top.apply((l, w, p) => {
-            p.handlers.push((p) => {
-                if (segments[l]?.length) {
-                    const value = segments[l][w];
-                    return {
-                        x: p.x,
-                        y: value.y,// p.y,
-                        z: p.z
-                    }
-                }
-
-                return p;
-            });
-        });
-
-        this.front.apply((l, w, p) => {
-            p.handlers.push((p) => {
-                if (w === (this.front.width - 1) && segments[0]?.length) {
-                    const value = segments[0][l];
-                    return {
-                        x: p.x,
-                        y: value.y, //p.y,
-                        z: p.z
-                    }
-                }
-                return p;
-            });
-        })
-
-        this.back.apply((l, w, p) => {
-            p.handlers.push((p) => {
-                if (w === (this.back.width - 1) && segments[this.lengthPoints - 1]?.length) {
-                    const value = segments[this.lengthPoints - 1][l];
-                    console.log(value);
-                    return {
-                        x: p.x,
-                        y: value.y, //p.y,
-                        z: p.z
-                    }
-                }
-                return p;
-            });
-        })
-    }
-    */
-
     public sectionPoints(
         design: IDesign,
         section: ISectionData): ISectionPoints {
-        const { left, right, front, back, top, bottom } = this;
+        const { 
+            front, top,
+            //left, right, 
+            //back,  bottom 
+        } = this;
 
         const result : ISectionPoints = {
             front: [],

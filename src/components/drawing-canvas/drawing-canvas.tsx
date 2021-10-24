@@ -1,9 +1,12 @@
 import React from "react";
 import { Component } from "react";
+import { IDesign } from "../../DesignStore";
+import { DesignTools } from "../../DesignTools";
 import { BufferStream, Generate, IPoint2D } from "../../lib";
 import { Tools } from "../../lib/tools";
-import { drawingMode, IWheelModel, wheelDrawingType } from "../drawing-model";
+import { drawingMode, IWheelModel, sectionEditorMode, wheelDrawingType } from "../drawing-model";
 import "./drawing-canvas.scss";
+import { DrawingWheels } from "./drawing-wheels";
 
 export interface IDrawingCanvasProps {
     id: string;
@@ -20,6 +23,8 @@ export interface IDrawingCanvasProps {
     onSectionSelected: (showSectionSelector: boolean, section: number) => void;
     onSectionChanged: (sections: number[], points: IPoint2D[] | null) => void;
     sections: number;
+    design: IDesign;
+    sectionMode: sectionEditorMode;
 }
 
 enum wheelDrawingMode {
@@ -143,6 +148,20 @@ export class DrawingCanvas extends Component<IProps, IState> {
         this.drawSignal();
     }
 
+    get width() {
+        const { contour } = this.props;
+        const { scale } = this.state;
+        
+        return (contour.length - 1) * scale;
+    }
+
+    get height() {
+        const { maxY } = this.props;
+        const { scale } = this.state;
+
+        return maxY * scale;
+    }
+
     drawGrid(ctx: CanvasRenderingContext2D) {
         const { contour, maxY } = this.props;
         const { scale, margin } = this.state;
@@ -204,121 +223,17 @@ export class DrawingCanvas extends Component<IProps, IState> {
         }
     }
 
-    drawWheelSide(ctx: CanvasRenderingContext2D, wheel: IWheelModel) {
-        const { margin, scale } = this.state;
-
-        const center = this.translate(this.scalePoint(wheel.center));
-        const wheelArcFrontFrom = this.translate(this.scalePoint({ x: wheel.center.x - wheel.wheelRadius, y: wheel.center.y }));
-        const wheelArcFrontTo = this.translate(this.scalePoint({ x: wheel.center.x - wheel.wheelRadius, y: 0 }));
-
-        const wheelArcBackFrom = this.translate(this.scalePoint({ x: wheel.center.x + wheel.wheelRadius, y: wheel.center.y }));
-        const wheelArcBackTo = this.translate(this.scalePoint({ x: wheel.center.x + wheel.wheelRadius, y: 0 }));
-
-        const wheelRadiusHandle = this.translate(this.scalePoint({ x: wheel.center.x, y: wheel.center.y + wheel.wheelRadius }));
-
-        ctx.beginPath();
-        ctx.arc(
-            margin + center.x, 
-            margin + center.y,
-            wheel.wheelRadius * scale,
-            Math.PI, 
-            2 * Math.PI
-        );
-
-        ctx.moveTo(margin + wheelArcFrontFrom.x, margin + wheelArcFrontFrom.y);
-        ctx.lineTo(margin + wheelArcFrontTo.x, margin + wheelArcFrontTo.y);
-
-        ctx.moveTo(margin + wheelArcBackFrom.x, margin + wheelArcBackFrom.y);
-        ctx.lineTo(margin + wheelArcBackTo.x, margin + wheelArcBackTo.y);
-
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.arc(
-            margin + center.x, 
-            margin + center.y,
-            5,
-            0,
-            2 * Math.PI,
-        )
-
-        ctx.arc(
-            margin + wheelRadiusHandle.x, 
-            margin + wheelRadiusHandle.y,
-            5,
-            0,
-            2 * Math.PI,
-        )
-        ctx.fill();
-    }
-
-    drawWheelTop(ctx: CanvasRenderingContext2D, wheel: IWheelModel) {
-        const { margin } = this.state;
-
-        const innerCenter = this.translate(this.scalePoint({
-            x: wheel.center.x,
-            y: 2 * wheel.offset
-        }));
-        const outerCenter = this.translate(this.scalePoint({
-            x: wheel.center.x,
-            y: 2 * (wheel.offset + wheel.width)
-        }));        
-
-        const wheelContour: IPoint2D[] = [
-            {
-                x: wheel.center.x - wheel.wheelRadius,
-                y: 2 * wheel.offset
-            },
-            {
-                x: wheel.center.x + wheel.wheelRadius,
-                y: 2 * wheel.offset
-            },
-            {
-                x: wheel.center.x + wheel.wheelRadius,
-                y: 2 * (wheel.offset + wheel.width)
-            },
-            {
-                x: wheel.center.x - wheel.wheelRadius,
-                y: 2 * (wheel.offset + wheel.width)
-            },
-        ];
-
-        const mappedWheelCountour = wheelContour.map(p => this.translate(this.scalePoint(p)));
- 
-        ctx.beginPath();
-        ctx.moveTo(margin + mappedWheelCountour[3].x, margin + mappedWheelCountour[3].y);
-        mappedWheelCountour.forEach((p, idx) => {
-            ctx.lineTo(margin + p.x, margin + p.y);
-        })
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.arc(
-            margin + innerCenter.x, 
-            margin + innerCenter.y,
-            5,
-            0,
-            2 * Math.PI,
-        )
-
-        ctx.arc(
-            margin + outerCenter.x, 
-            margin + outerCenter.y,
-            5,
-            0,
-            2 * Math.PI,
-        )
-        ctx.fill();
-    }
-
     drawWheels(ctx: CanvasRenderingContext2D) {
         const { wheels, wheelDrawing } = this.props;
+        const { margin, scale } = this.state;
+
+        const drawingWheels = new DrawingWheels(margin, scale, (p) => this.translate(this.scalePoint(p)));
 
         for (const wheel of wheels || []) {
             switch (wheelDrawing) {
                 case wheelDrawingType.None: break;
-                case wheelDrawingType.Side: this.drawWheelSide(ctx, wheel); break;
-                case wheelDrawingType.Top: this.drawWheelTop(ctx, wheel); break;
+                case wheelDrawingType.Side: drawingWheels.drawWheelSide(ctx, wheel); break;
+                case wheelDrawingType.Top: drawingWheels.drawWheelTop(ctx, wheel); break;
             }
         }
     }
@@ -345,6 +260,27 @@ export class DrawingCanvas extends Component<IProps, IState> {
         ctx.strokeStyle = currentStyle;
     }
 
+    drawSections(ctx: CanvasRenderingContext2D) {
+        const { margin } = this.state;
+        const { design, sectionMode, showSectionSelector } = this.props;
+    
+        if (!showSectionSelector || sectionMode !== sectionEditorMode.Pick) return;
+        const designTools = new DesignTools(design);
+        const existingIndexes = designTools.existingIndexes;
+
+        ctx.beginPath();
+
+        for (const idx of existingIndexes) {
+            const from = this.translate(this.scalePoint({ x: idx, y: 0 }));
+            const to = this.translate(this.scalePoint({x: idx, y: this.height}));
+
+            ctx.moveTo(margin + from.x, margin + from.y);
+            ctx.lineTo(margin + to.x, margin + to.y);
+        }
+
+        ctx.stroke();
+    }
+
     drawSignal() {
         const { canvas } = this;
         if (!canvas) return;
@@ -354,9 +290,9 @@ export class DrawingCanvas extends Component<IProps, IState> {
 
         this.drawGrid(ctx);
 
-        const { contour, section, sectionBaseline, showSectionSelector } = this.props;
+        const { contour, section, sectionBaseline, showSectionSelector, sectionMode } = this.props;
 
-        if (showSectionSelector) {
+        if (showSectionSelector && sectionMode === sectionEditorMode.Edit) {            
             if (sectionBaseline)
                 this.drawPoints(ctx, sectionBaseline, "gray");
 
@@ -369,6 +305,7 @@ export class DrawingCanvas extends Component<IProps, IState> {
 
 
         this.drawWheels(ctx);
+        this.drawSections(ctx);
     }
 
     lerp(samples: IPoint2D[], from: IPoint2D, to: IPoint2D) {
@@ -394,8 +331,13 @@ export class DrawingCanvas extends Component<IProps, IState> {
     }
 
     processPoints(points: IPoint2D[]) {
-        const { symmetrical } = this.props;
+        const { symmetrical, showSectionSelector, sectionMode, onSectionSelected } = this.props;
 
+        if (showSectionSelector && sectionMode === sectionEditorMode.Pick) {
+            onSectionSelected(showSectionSelector, points[points.length - 1].x);
+            return;
+        }
+        
         const samples = this.currentSamples;
 
         const halfIndex = (samples.length - 1) / 2;
@@ -660,8 +602,9 @@ export class DrawingCanvas extends Component<IProps, IState> {
     }
 
     renderSectionSelector() {
-        const { id, onSectionChanged, onSectionSelected, sections, sectionIndex, showSectionSelector } = this.props;
+        const { sectionMode, onSectionChanged, onSectionSelected, sections, sectionIndex, showSectionSelector } = this.props;
 
+        if (sectionMode !== sectionEditorMode.Edit) return null;
         if (!onSectionChanged) return null;
         if (!showSectionSelector) return null;
 

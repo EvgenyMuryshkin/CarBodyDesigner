@@ -6,18 +6,34 @@ export class DesignTools {
 
     }
 
-    interpolateSections() {
+    get interpolationSource() {
         const { design } = this;
-        const { boxSize, frontSegments, frontPoints  } = design;
-
+        const { frontSegments, frontPoints  } = design;
         const interpolatedSegments: IPoint2D[][] = [...frontSegments];
 
         // prefill first segmet with from countour
         if (!interpolatedSegments[0]) interpolatedSegments[0] = [...frontPoints];
-          
+
+        return interpolatedSegments;
+    }
+
+    get existingIndexes() {
+        const { design } = this;
+        const { boxSize } = design;
+        const interpolationSource = this.interpolationSource;
         const sectionsIndexes = Generate.range(0, boxSize.x);
-        const existingSections = sectionsIndexes.filter(i => interpolatedSegments[i]);
-          
+        const existingSections = sectionsIndexes.filter(i => interpolationSource[i]);
+
+        return existingSections;
+    }
+
+    interpolateSections() {
+        const { design } = this;
+        const { boxSize } = design;
+
+        const interpolatedSegments = this.interpolationSource;
+        const existingSections = this.existingIndexes;
+
         for (let idx = 0; idx < existingSections.length - 1; idx++)
         {
             const startSectionIdx = existingSections[idx];

@@ -1,13 +1,8 @@
 import React from 'react';
-import { STLExporter } from 'three/examples/jsm/exporters/STLExporter';
-import { BodyShape } from './BodyShape';
-import { Dialogs, Forms, Icon, IconSeparator, IIconProps } from './components';
+import { Dialogs, Forms, Icon, iconType, IconSeparator, IIconProps, IGenericDialog } from './components';
 import { DesignStore, IDesign, IDesignStoreState } from './DesignStore';
 import { IRenderSettings, Tools } from './lib';
-import { generationParity } from './SidePlane';
-import { mergeBufferGeometries } from "three/examples/jsm/utils/BufferGeometryUtils";
-import { MathUtils } from 'three';
-import * as THREE from "three";
+import { DesignStoreOperations } from './DesignStoreOperations';
 
 interface IProps {
     designStore: DesignStore;
@@ -16,7 +11,73 @@ interface IProps {
     renderSettingsChanged: (renderSettings: IRenderSettings) => void;
 }
 
+interface IMainToolbarItem {
+    isSeparator?: boolean;
+    icon?: iconType;
+    title?: string,
+    action?: () => void;
+    selected?: () => boolean;
+}
+
 export class MainToolbar extends React.Component<IProps> {
+    items: IMainToolbarItem[] = [];
+
+    constructor(props: IProps) {
+        super(props);
+
+        this.items = [
+            { icon: "BiHelpCircle", title: "Help", action: ()=> this.showHelp() },
+            { icon: "GrPowerReset", title:"Reset All", action: () => this.resetAll() },
+            { isSeparator: true },
+            { icon: "VscNewFile", title: "New Design", action: () => this.newDesign()},
+            { icon: "FiDownload", title: "Download designs" , action: () => this.dso.downloadDesigns()},
+            { icon: "FiUpload", title: "Upload designs", action: () => this.dso.uploadDesigns()},
+            { icon: "AiOutlineExport", title: "Export STL", action: () => this.dso.exportSTL()},
+            { isSeparator: true },
+            { icon: "GrClone", title: "Clone Design", action: () => this.cloneDesign()},
+            { icon: "AiOutlineSetting", title: "Settings", action: () => this.settings()},
+            { icon: "AiOutlineCloseCircle", title: "Delete Design", action: () => this.deleteDesign()},
+            { isSeparator: true },
+            { icon: "GiWireframeGlobe", title: "Wireframes", selected: () => this.props.renderSettings.wireframes, action: () => this.toggleWireframes()} ,
+            { icon: "CgEditShadows", title: "Flat Shading", selected: () => this.props.renderSettings.flatShading, action: () => this.toggleFlatShading()},
+            { isSeparator: true },
+            { icon: "AiOutlineGithub", title: "Github", action: () => { window.open("https://github.com")}},
+            { icon: "AiOutlineTwitter", title: "Twitter", action: () => { window.open("https://twitter.com")}},
+            { icon: "BiChip", title: "QuSoC", action: () => { window.open("https://github.com/EvgenyMuryshkin/qusoc")}},
+        ]
+    }
+
+    async showHelp() {
+        const { items } = this;
+        const menuItems = items.filter(i => !i.isSeparator);
+        let genericDialog: IGenericDialog | null = null;
+        const rows = menuItems.map((i, idx) => {
+            return (
+                <tr key={idx}>
+                    <td><Icon type={i.icon} selected={i.selected?.()} onClick={() => {
+                        if (genericDialog) {
+                            Dialogs.Remove(genericDialog);
+                            i.action?.();
+                        }
+                    }}/></td>
+                    <td>{i.title}</td>
+                </tr>
+            )
+        })
+
+        await Dialogs.Notification(
+            "Main Toolbar",
+            (
+                <table>
+                    <tbody>
+                        {rows}
+                    </tbody>
+                </table>
+            ),
+            { genericDialogCallback: (d) => genericDialog = d }
+        );
+    }
+
     async newDesign() {
         const { designStore } = this.props;
 
@@ -34,13 +95,10 @@ export class MainToolbar extends React.Component<IProps> {
         }
     }
 
-    resetModel() {
-        const { designStore, designStoreState } = this.props;
-        const { design } = designStoreState;
-        if (!design) return;
-    
-        const newDesign = designStore.newDesing(design.name);
-        this.updateDesign(newDesign);
+    async resetAll() {
+        const { designStore } = this.props;
+        if (!await Dialogs.Confirm("Reset all designs?")) return;
+        designStore.resetAll();
     }
     
     updateDesign(design: IDesign | null) {
@@ -78,7 +136,7 @@ export class MainToolbar extends React.Component<IProps> {
         designStore.deleteDesign(design);
     }
     
-      async settings() {
+    async settings() {
         const { designStore, designStoreState } = this.props;
         const { design } = designStoreState;
         if (!design) return;
@@ -95,51 +153,32 @@ export class MainToolbar extends React.Component<IProps> {
             d.colorEven = settings.colorEven;
         });
     }
+    
+    modify(diff: Partial<IRenderSettings>) {
+        const { renderSettingsChanged, renderSettings } = this.props;
 
-    async exportSTL() {
-        const { designStoreState } = this.props;
-        const { design } = designStoreState;
-        if (!design) return;
-
-        const params = await Forms.Modal("Export to STL", {
-            stringName: `${design.name}.stl`,
-            intXRotationDeg: 0,
-            intYRotationDeg: 0,
-            intZRotationDeg: 0
+        renderSettingsChanged({
+            ...renderSettings,
+            ...diff
         });
-    
-        if (!params) return;
-    
-        const { boxSize, topPoints, frontPoints, sidePoints, wheels, frontSegments } = design;
-        const exporter = new STLExporter();
-        const bodyShape = new BodyShape(boxSize.x, boxSize.y, boxSize.z, generationParity.All);
-        bodyShape.applyContour(sidePoints, frontPoints, topPoints, wheels, frontSegments );
-        const singleGeometry = mergeBufferGeometries(bodyShape.geometry);
-        
-        singleGeometry.rotateX(MathUtils.degToRad(params.intXRotationDeg));
-        singleGeometry.rotateY(MathUtils.degToRad(params.intYRotationDeg));
-        singleGeometry.rotateZ(MathUtils.degToRad(params.intXRotationDeg));
-    
-        const material = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
-        const mesh = new THREE.Mesh( singleGeometry, material );
-    
-        const stl = exporter.parse(mesh);
-        const link = document.createElement( 'a' );
-        link.style.display = 'none';
-        document.body.appendChild( link );
-    
-        const blob = new Blob( [ stl ], { type: 'text/plain' } );
-    
-        link.href = URL.createObjectURL( blob );
-        link.download = params.stringName || "test.stl";
-        link.click();
-    
-        link.remove();
+    }
+
+    toggleWireframes() {
+        this.modify({ wireframes: !this.props.renderSettings.wireframes });
+    }
+
+    toggleFlatShading() {
+        this.modify({ flatShading: !this.props.renderSettings.flatShading });
+    }
+
+    get dso() {
+        const { designStoreState } = this.props;
+        return new DesignStoreOperations(designStoreState);
     }
 
     render() {
-        const { renderSettings, renderSettingsChanged } = this.props;
-        const { wireframes, flatShading } = renderSettings;
+        const { items } = this;
+
         const iconParams: Partial<IIconProps> = {
             bordered: true,
             size: "large"
@@ -149,34 +188,24 @@ export class MainToolbar extends React.Component<IProps> {
             size: iconParams.size
         }
     
-        const modify = (diff: Partial<IRenderSettings>) => {
-            renderSettingsChanged({
-                ...renderSettings,
-                ...diff
-            });
+        const menuItems = items.map((i, idx) => {
+            if (i.isSeparator) return <IconSeparator key={idx} {...separatorParams}/>;
+            return (
+                <Icon 
+                    key={idx} 
+                    {...iconParams} 
+                    type={i.icon} 
+                    title={i.title} 
+                    selected={i.selected?.()} 
+                    onClick={i.action}
+                />
+            )
 
-        }
+        })
         return (
-          <div className="menu menu-top">
-            <Icon type="VscNewFile" title="New Design" {...iconParams} onClick={() => this.newDesign()}/>
-            <IconSeparator {...separatorParams}/>
-            <Icon type="GrClone" title="Clone Design" {...iconParams} onClick={() => this.cloneDesign()}/>
-            <Icon type="AiOutlineSetting" title="Settings" {...iconParams} onClick={() => this.settings()}/>
-            <Icon type="AiOutlineCloseCircle" title="Delete Design" {...iconParams} onClick={() => this.deleteDesign()}/>
-    
-            {/*<Icon type="GrPowerReset" onClick={() => this.resetModel()}/>*/}
-            <IconSeparator {...separatorParams}/>
-            <Icon type="GiWireframeGlobe" title="Wireframes" {...iconParams} selected={wireframes} onClick={() => modify({ wireframes: !wireframes })} />
-            <Icon type="CgEditShadows" title="Flat Shading" {...iconParams} selected={flatShading} onClick={() => modify({ flatShading: !flatShading })}/>
-            <Icon type="AiOutlineExport" title="Export STL" {...iconParams} onClick={() => this.exportSTL()}/>
-            
-            <IconSeparator {...separatorParams}/>
-            <Icon type="AiOutlineGithub" title="Github" {...iconParams} onClick={() => {window.open("https://github.com")}}/>
-            <Icon type="AiOutlineTwitter" title="Twitter" {...iconParams} onClick={() => {window.open("https://twitter.com")}}/>
-            <Icon type="BiChip" title="QuSoC" {...iconParams} onClick={() => {window.open("https://github.com/EvgenyMuryshkin/qusoc")}}/>
-      
-            
-         </div>      
+            <div className="menu menu-top">
+                {menuItems}
+            </div>      
         );
     }
 }

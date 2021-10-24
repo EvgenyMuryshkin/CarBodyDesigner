@@ -84,8 +84,7 @@ export class AppScene extends React.Component<IProps, IState> {
             topPoints, 
             colorOdd, 
             colorEven, 
-            wheels, 
-            frontSegments 
+            wheels 
         } = design;
 
         const { flatShading, wireframes } = renderSettings;

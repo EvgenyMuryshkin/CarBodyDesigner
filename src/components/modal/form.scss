@@ -3,8 +3,16 @@
         font-weight: bold;
     }
 
-    .form-control {
-        width: 100%;
-        font-size: large;
+    .form-control-container {
+        text-align: left;
+
+        .form-control {
+            width: 100%;
+            font-size: large;    
+        }
+
+        input[type="checkbox"] {
+            width: initial;
+        }
     }
 }

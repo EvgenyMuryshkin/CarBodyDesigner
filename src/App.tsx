@@ -1,21 +1,22 @@
 import React from 'react';
 import './App.scss';
 import { AppScene } from './AppScene';
-import { Generate, IPoint2D, IRenderSettings, ISectionData, Tools } from './lib';
+import { IRenderSettings, ISectionData, Tools } from './lib';
 import { ModalsComponent } from './components';
 import { DesignStore, IDesign, IDesignStoreState } from './DesignStore';
 import { SideEditor } from './components/side-editor';
-import { wheelDrawingType } from './components/drawing-model';
+import { sectionEditorMode, wheelDrawingType } from './components/drawing-model';
 import { MainToolbar } from './MainToolbar';
 import { BodyShape, CountourQuery } from './BodyShape';
 import { generationParity } from './SidePlane';
-import { DesignTools } from './DesignTools';
 
 interface IState {
   designStore: DesignStore;
   currentSectionData: ISectionData;
   renderSettings: IRenderSettings;
   designStoreState: IDesignStoreState;
+  showSectionSelector: boolean;
+  currentSection: number;
 }
 
 export class App extends React.Component<{}, IState> {
@@ -35,7 +36,9 @@ export class App extends React.Component<{}, IState> {
         front: null,
         side: null,
         top: null
-      }
+      },
+      showSectionSelector: false,
+      currentSection: 0
     }
   }
 
@@ -56,7 +59,14 @@ export class App extends React.Component<{}, IState> {
   }
 
   renderDesign() {
-    const { designStoreState, designStore, renderSettings, currentSectionData } = this.state;
+    const { 
+      designStoreState, 
+      designStore, 
+      renderSettings, 
+      currentSectionData, 
+      showSectionSelector, 
+      currentSection 
+    } = this.state;
     const { design } = designStoreState;
     if (!design) return null;
 
@@ -94,6 +104,17 @@ export class App extends React.Component<{}, IState> {
       //})
     }
 
+    const onSectionSelected = (show: boolean, section: number) => {
+      this.setState({
+        currentSectionData: {
+          ...currentSectionData,
+          front: show ? section : null
+        },
+        showSectionSelector: show,
+        currentSection: section
+      })
+    }
+
     return (
       <table className="main-layout">
         <tbody>
@@ -115,18 +136,11 @@ export class App extends React.Component<{}, IState> {
                 wheels={null}
                 wheelDrawing={wheelDrawingType.None}
                 sections={boxSize.x}
-                onSectionSelected={(show, section) => {
-                  this.setState({
-                    currentSectionData: {
-                      ...currentSectionData,
-                      front: show ? section : null
-                    }
-                  })
-                }}
+                onSectionSelected={onSectionSelected}
                 onSectionChanged={(sections, points) => {
                   const modifiedSegments = [...design.frontSegments];
                   sections.forEach(s => {
-                    if (s == sections[0] && points !== null) {
+                    if (s === sections[0] && points !== null) {
                       modifiedSegments[s] = points.map(p => ({ x: p.x, y: p.y }));
                     }
                     else {
@@ -140,6 +154,10 @@ export class App extends React.Component<{}, IState> {
                 sectionBaseline={sectionBaseline}
                 section={section/*section.front.map((p, idx) => ({ x: idx, y: p.y }))*/}
                 onInterpolateSections={interpolateSections}
+                showSectionSelector={showSectionSelector}
+                currentSection={currentSection}
+                design={design}
+                sectionMode={sectionEditorMode.Edit}
               />
             </td>
             <td>
@@ -160,17 +178,14 @@ export class App extends React.Component<{}, IState> {
                 wheels={wheels}
                 wheelDrawing={wheelDrawingType.Top}
                 sections={boxSize.z}
-                onSectionSelected={(show, section) => {
-                  this.setState({
-                    currentSectionData: {
-                      ...currentSectionData,
-                      top: show ? section : null
-                    }
-                  })
-                }}                
+                onSectionSelected={onSectionSelected}                
                 onSectionChanged={(sections, points) => {}}
                 section={null/*section.top.map((p, idx) => ({ x: idx, y: p.y }))*/}
                 sectionBaseline={null}
+                showSectionSelector={showSectionSelector}
+                currentSection={currentSection}
+                design={design}
+                sectionMode={sectionEditorMode.Pick}
               />
             </td>
           </tr>
@@ -193,17 +208,14 @@ export class App extends React.Component<{}, IState> {
                 wheels={wheels}
                 wheelDrawing={wheelDrawingType.Side}
                 sections={boxSize.y}
-                onSectionSelected={(show, section) => {
-                  this.setState({
-                    currentSectionData: {
-                      ...currentSectionData,
-                      side: show ? section : null
-                    }
-                  })
-                }}
+                onSectionSelected={onSectionSelected}
                 onSectionChanged={(sections, points) => {}}
                 section={null/*section.side.map((p, idx) => ({ x: idx, y: p.y }))*/}
                 sectionBaseline={null}
+                showSectionSelector={showSectionSelector}
+                currentSection={currentSection}
+                design={design}
+                sectionMode={sectionEditorMode.Pick}
               />
             </td>
             <td>

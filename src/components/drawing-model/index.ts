@@ -18,3 +18,9 @@ export interface IWheelModel {
     offset: number;
     width: number;
 }
+
+export enum sectionEditorMode {
+    None,
+    Pick,
+    Edit
+}

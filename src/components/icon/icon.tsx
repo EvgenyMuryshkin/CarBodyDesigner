@@ -8,9 +8,9 @@ import { AiOutlineFunction, AiFillLock, AiOutlineFastForward, AiOutlineGithub, A
 import { ImMoveUp, ImMoveDown, ImPencil2 } from "react-icons/im"
 import { GiWhiplash, GiSlicedBread } from "react-icons/gi"
 import { TiArrowForwardOutline } from "react-icons/ti"
-import { BiChip } from "react-icons/bi"
+import { BiChip, BiHelpCircle } from "react-icons/bi"
 import { RiDeleteBack2Line } from "react-icons/ri"
-
+import { FiUpload, FiDownload } from "react-icons/fi"
 import { Tools } from "../../lib";
 import "./icon.scss";
 
@@ -44,7 +44,10 @@ export type iconType =
     "BiChip" |
     "RiDeleteBack2Line" |
     "AiFillLock" |
-    "AiOutlineFunction"
+    "AiOutlineFunction" |
+    "FiUpload" |
+    "FiDownload" |
+    "BiHelpCircle"
     ;
 
 export interface IIconElementProps {
@@ -53,7 +56,7 @@ export interface IIconElementProps {
 }
 
 export interface IIconProps extends IIconElementProps {
-    type: iconType;
+    type?: iconType;
     title?: string;
     readOnlyTitle?: string;
     selected?: boolean;
@@ -130,6 +133,9 @@ export class Icon extends React.Component<IIconProps> {
             case "RiDeleteBack2Line": return <RiDeleteBack2Line {...iconProps} />
             case "AiFillLock": return <AiFillLock {...iconProps}/>
             case "AiOutlineFunction": return <AiOutlineFunction {...iconProps}/>
+            case "FiUpload": return <FiUpload {...iconProps} />
+            case "FiDownload": return <FiDownload {...iconProps}/>
+            case "BiHelpCircle": return <BiHelpCircle {...iconProps}/>
             default: return null;
         }
     }

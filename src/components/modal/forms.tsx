@@ -36,12 +36,17 @@ class DynamicForm<T extends {[key: string]: any}> extends React.Component<IDynam
                 )
             }
             const fieldName = key.substring(index);
+            const fieldLabel = fieldName.split('').map((c, idx) => {
+                if (idx === 0) return c;
+                if (c === c.toUpperCase()) return ` ${c}`;
+                return c;
+            }).join("");
 
             const formComponent = (fieldEditor: JSX.Element ) => {
                 return (
                     <div key={key}>
-                        <div className="form-label">{fieldName}</div>
-                        <div>{fieldEditor}</div>
+                        <div className="form-label">{fieldLabel}</div>
+                        <div className="form-control-container">{fieldEditor}</div>
                     </div>
                 )
             }
@@ -57,6 +62,9 @@ class DynamicForm<T extends {[key: string]: any}> extends React.Component<IDynam
 
             const fieldType = key.substring(0, index);
             switch(fieldType) {
+                case "flag": {
+                    return formComponent(<input className="form-control" type="checkbox" checked={!!model[key]} onChange={e => modify(e.target.checked)}/>)
+                }
                 case "int": {
                     return formComponent(<input className="form-control" type="number" value={model[key]} onChange={e => modify(parseInt(e.target.value || "0"))}/>)
                 }
