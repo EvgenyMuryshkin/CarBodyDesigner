@@ -4,6 +4,7 @@ import { DrawingCanvas, IDrawingCanvasProps } from "../drawing-canvas/drawing-ca
 import { drawingMode } from "../drawing-model";
 import { Icon, IconSeparator, IIconProps } from "../icon/icon";
 import { Dialogs } from "../modal/modal";
+import { IToolbarItem, Toolbar } from "../toolbar/toolbar";
 import { ModalSideEditor } from "./modal-side-editor";
 import "./side-editor.scss";
 
@@ -155,6 +156,53 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
             readOnlyTitle: "Turn on section editor"
         };
 
+        const items: IToolbarItem[] = [
+            { icon: "BiHelpCircle", title: "Help", action: ()=> Toolbar.Modal("Main Toolbar", items) },
+            { icon: "AiOutlineFullscreen", title: "Fullscreen edit",  action: async () => await this.fullscreenEdit() },
+            { isSeparator: true },
+            { icon: "ImPencil2", title: "Draw countour", selected: () => mode === drawingMode.Contour, action: () => this.setState({ mode: drawingMode.Contour })},   
+            { icon: "GiCartwheel", title:"Draw wheel", selected: () => mode === drawingMode.Wheel, 
+                hidden: () => !wheels,
+                action: () => this.setState({ mode: drawingMode.Wheel }) },
+            { isSeparator: true },
+            { icon: "ImMoveUp", title: "Move Up", action: () => this.moveUp()},
+            { icon: "ImMoveDown", title: "Move Down", action: () => this.moveDown()},
+            { icon: "AiOutlineBorderTop", title: "All Up", action: () => this.allUp()},
+            { icon: "AiOutlineBorderBottom", title: "All Down", action: () => this.allDown()},
+            { icon: "GiWhiplash", title: "Smooth", action: () => this.smooth()},
+            { isSeparator: true },
+            { icon: "GiSlicedBread" ,
+                title: "Slice Edit",
+                selected: () => showSectionSelector,
+                action: () => {
+                    onSectionSelected(!showSectionSelector, currentSection)
+                }
+            },
+            { icon: "AiFillLock",
+                title: "Lock section",
+                iconParams: sectionParams,
+                action: () => this.lockSection()
+            },
+            { icon: "RiDeleteBack2Line", 
+                title: "Revert section",
+                iconParams: sectionParams,
+                action: () => this.removeSection()
+            },                
+            { icon: "TiArrowForwardOutline", 
+                title: "Apply to remaining sections",
+                iconParams: sectionParams,
+                action: () => this.applyToRemaining()
+            },
+            { 
+                icon: "AiOutlineFunction", 
+                iconParams: sectionParams,
+                title: "Interpolate sections",
+                hidden: () => !onInterpolateSections,
+                action: () => this.interpolateSections()
+            }
+        ]
+
+        return <Toolbar className="menu menu-top" items={items} iconParams={iconParams} />
         return (
             <div className="menu menu-top">
                 <Icon type="AiOutlineFullscreen" title="Fullscreen edit" {...iconParams} onClick={async () => await this.fullscreenEdit()}/>
