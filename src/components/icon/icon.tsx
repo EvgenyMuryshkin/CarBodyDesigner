@@ -2,7 +2,7 @@ import * as React from "react"
 import { IconBaseProps } from "react-icons";
 import { CgEditShadows } from "react-icons/cg";
 import { GiWireframeGlobe, GiCartwheel } from "react-icons/gi";
-import { GrPowerReset, GrClone } from "react-icons/gr";
+import { GrFavorite, GrPowerReset, GrClone } from "react-icons/gr";
 import { VscNewFile } from "react-icons/vsc";
 import { AiOutlineFunction, AiFillLock, AiOutlineFastForward, AiOutlineGithub, AiOutlineTwitter, AiOutlineExport, AiOutlineSetting, AiOutlineInfoCircle, AiOutlineCloseCircle, AiOutlineWarning, AiOutlineBorderTop, AiOutlineBorderBottom, AiOutlineFullscreen } from "react-icons/ai";
 import { ImMoveUp, ImMoveDown, ImPencil2 } from "react-icons/im"
@@ -11,6 +11,7 @@ import { TiArrowForwardOutline } from "react-icons/ti"
 import { BiChip, BiHelpCircle } from "react-icons/bi"
 import { RiDeleteBack2Line } from "react-icons/ri"
 import { FiUpload, FiDownload } from "react-icons/fi"
+
 import { Tools } from "../../lib";
 import "./icon.scss";
 
@@ -47,7 +48,8 @@ export type iconType =
     "AiOutlineFunction" |
     "FiUpload" |
     "FiDownload" |
-    "BiHelpCircle"
+    "BiHelpCircle" |
+    "GrFavorite"
     ;
 
 export interface IIconElementProps {
@@ -136,6 +138,7 @@ export class Icon extends React.Component<IIconProps> {
             case "FiUpload": return <FiUpload {...iconProps} />
             case "FiDownload": return <FiDownload {...iconProps}/>
             case "BiHelpCircle": return <BiHelpCircle {...iconProps}/>
+            case "GrFavorite": return <GrFavorite {...iconProps}/>
             default: return null;
         }
     }

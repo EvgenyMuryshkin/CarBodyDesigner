@@ -157,7 +157,7 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
         };
 
         const items: IToolbarItem[] = [
-            { icon: "BiHelpCircle", title: "Help", action: ()=> Toolbar.Modal("Main Toolbar", items) },
+            { icon: "BiHelpCircle", title: "Legend", action: ()=> Toolbar.Modal("Main Toolbar", items) },
             { icon: "AiOutlineFullscreen", title: "Fullscreen edit",  action: async () => await this.fullscreenEdit() },
             { isSeparator: true },
             { icon: "ImPencil2", title: "Draw countour", selected: () => mode === drawingMode.Contour, action: () => this.setState({ mode: drawingMode.Contour })},   
@@ -192,14 +192,15 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
                 title: "Apply to remaining sections",
                 iconParams: sectionParams,
                 action: () => this.applyToRemaining()
-            },
+            }
+            /*,
             { 
                 icon: "AiOutlineFunction", 
                 iconParams: sectionParams,
                 title: "Interpolate sections",
                 hidden: () => !onInterpolateSections,
                 action: () => this.interpolateSections()
-            }
+            }*/
         ]
 
         return <Toolbar className="menu menu-top" items={items} iconParams={iconParams} />

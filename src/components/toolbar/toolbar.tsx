@@ -1,6 +1,7 @@
 import React from 'react';
 import { Icon, IconSeparator, iconType, IIconProps } from '../icon/icon';
 import { Dialogs, IGenericDialog } from '../modal';
+import "./toolbar.scss";
 
 export interface IToolbarItem {
     isSeparator?: boolean;
@@ -50,12 +51,16 @@ export class Toolbar extends React.Component<IProps> {
     }
 
     static async Modal(title: string, items: IToolbarItem[]) {
-        const menuItems = items.filter(i => !i.isSeparator);
+        const menuItems = items;
         let genericDialog: IGenericDialog | null = null;
         const rows = menuItems.map((i, idx) => {
+            if (i.isSeparator) {
+                return <tr key={idx}><td colSpan={2} className="toolbar-legend-separator"></td></tr>
+            }
+
             return (
                 <tr key={idx}>
-                    <td><Icon type={i.icon} selected={i.selected?.()} onClick={() => {
+                    <td className="toolbar-legend-icon"><Icon type={i.icon} selected={i.selected?.()} onClick={() => {
                         if (genericDialog) {
                             Dialogs.Remove(genericDialog);
                             i.action?.();
@@ -69,7 +74,7 @@ export class Toolbar extends React.Component<IProps> {
         await Dialogs.Notification(
             title,
             (
-                <table>
+                <table className="toolbar-legend">
                     <tbody>
                         {rows}
                     </tbody>

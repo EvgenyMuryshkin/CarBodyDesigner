@@ -4,9 +4,10 @@ import { Dialogs, Forms } from "./components";
 import { IDesignStoreState, IStorageModel } from "./DesignStore";
 import { generationParity } from "./SidePlane";
 import { mergeBufferGeometries } from "three/examples/jsm/utils/BufferGeometryUtils";
-import { MathUtils } from "three";
+import { FogExp2, MathUtils } from "three";
 import * as THREE from "three";
 import { DesignTools } from "./DesignTools";
+import axios from "axios";
 
 export class DesignStoreOperations {
     constructor(private designStoreState: IDesignStoreState) {
@@ -60,6 +61,14 @@ export class DesignStoreOperations {
     
         const stl = exporter.parse(mesh);
         this.exportText(stl, 'text/plain', params.stringName || "test.stl");
+    }
+
+    async loadSampleDesigns() {
+        if (!await Dialogs.Confirm("Load sample designs?")) return;
+        
+        const { designStore } = this.designStoreState;        
+        const response = await axios.get("SampleDesigns.json");
+        designStore.replaceStorageModel(response.data);
     }
 
     async downloadDesigns() {

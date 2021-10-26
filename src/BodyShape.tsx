@@ -197,7 +197,7 @@ export class BodyShape {
                     const yTop = p.y * yScale * frontScale;
                     const wheelTop = wheel.center.y + wheelHeight + 1;
 
-                    const y = Tools.betweenInclusive(p.z, this.halfWidth - wheel.offset, this.halfWidth + wheel.offset)
+                    const y = Tools.betweenInclusive(p.z, this.halfWidth - wheel.offset + 1, this.halfWidth + wheel.offset - 1)
                         ? yTop
                         : Math.max(yTop, wheelTop);
 

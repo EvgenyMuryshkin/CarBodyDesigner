@@ -22,8 +22,9 @@ export class MainToolbar extends React.Component<IProps, IState> {
 
         this.state = {
             items: [
-                { icon: "BiHelpCircle", title: "Help", action: ()=> Toolbar.Modal("Main Toolbar", this.state.items) },
-                { icon: "GrPowerReset", title:"Reset All", action: () => this.resetAll() },
+                { icon: "BiHelpCircle", title: "Legend", action: ()=> Toolbar.Modal("Main Toolbar", this.state.items) },
+                { icon: "GrPowerReset", title: "Reset All", action: () => this.resetAll() },
+                { icon: "GrFavorite", title: "Load sample designs", action: () => this.dso.loadSampleDesigns() },
                 { isSeparator: true },
                 { icon: "VscNewFile", title: "New Design", action: () => this.newDesign()},
                 { icon: "FiDownload", title: "Download designs" , action: () => this.dso.downloadDesigns()},
