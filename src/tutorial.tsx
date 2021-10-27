@@ -4,6 +4,7 @@ import "./tutorial.scss";
 
 interface IProps {
     mainToolbarItems: IToolbarItem[];
+    sideEditorToolbar: IToolbarItem[];
 }
 
 export class Tutorial extends React.Component<IProps> {
@@ -18,11 +19,12 @@ export class Tutorial extends React.Component<IProps> {
     }
 
     render() {
-        const { mainToolbarItems } = this.props;
+        const { mainToolbarItems, sideEditorToolbar } = this.props;
 
         return (
             <div className="tutorial">
                 {this.section("Main Toolbar", <ToolbarLegend items={mainToolbarItems} dialogFactory={null} />)}
+                {this.section("Side Editor Toolbar", <ToolbarLegend items={sideEditorToolbar} dialogFactory={null} />)}
                 {this.section("Front view", "Draw front view of car body, then smooth contour", "car_front")}
                 {this.section("Top view", "Draw top view of car body, then smooth contour", "car_top")}
                 {this.section("Side view", "Draw side view of car body, then smooth contour", "car_side")}

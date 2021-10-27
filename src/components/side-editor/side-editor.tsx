@@ -1,5 +1,6 @@
 import * as React from "react"
 import { Generate, IPoint2D } from "../../lib";
+import { ISideEditorActions, ToolbarFactory } from "../../ToolbarFactory";
 import { DrawingCanvas, IDrawingCanvasProps } from "../drawing-canvas/drawing-canvas";
 import { drawingMode } from "../drawing-model";
 import { IIconProps } from "../icon/icon";
@@ -20,7 +21,7 @@ interface IState {
     mode: drawingMode;
 }
 
-export class SideEditor extends React.Component<ISideEditorProps, IState> {
+export class SideEditor extends React.Component<ISideEditorProps, IState> implements ISideEditorActions {
     constructor(props: ISideEditorProps) {
         super(props);
         this.state = {
@@ -144,6 +145,17 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
         onInterpolateSections?.();
     }
     
+    setDrawingMode(mode: drawingMode) {
+        this.setState({
+            mode
+        })
+    }
+
+    onSectionSelected(showSectionSelector: boolean, currentSection: number) {
+        const {onSectionSelected} = this.props;
+        onSectionSelected(showSectionSelector, currentSection);
+    }
+
     renderMenu() {
         const { showSectionSelector, currentSection, wheels, onSectionSelected, onInterpolateSections } = this.props;
         const { mode } = this.state;
@@ -157,52 +169,17 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
             readOnlyTitle: "Turn on section editor"
         };
 
-        const items: IToolbarItem[] = [
-            { icon: "FcViewDetails", title: "Legend", action: ()=> Toolbar.Modal("Main Toolbar", items) },
-            { icon: "AiOutlineFullscreen", title: "Fullscreen edit",  action: async () => await this.fullscreenEdit() },
-            { isSeparator: true },
-            { icon: "ImPencil2", title: "Draw countour", selected: () => mode === drawingMode.Contour, action: () => this.setState({ mode: drawingMode.Contour })},   
-            { icon: "GiCartwheel", title:"Draw wheel", selected: () => mode === drawingMode.Wheel, 
-                hidden: () => !wheels,
-                action: () => this.setState({ mode: drawingMode.Wheel }) },
-            { isSeparator: true },
-            { icon: "ImMoveUp", title: "Move Up", action: () => this.moveUp()},
-            { icon: "ImMoveDown", title: "Move Down", action: () => this.moveDown()},
-            { icon: "AiOutlineBorderTop", title: "All Up", action: () => this.allUp()},
-            { icon: "AiOutlineBorderBottom", title: "All Down", action: () => this.allDown()},
-            { icon: "GiWhiplash", title: "Smooth", action: () => this.smooth()},
-            { isSeparator: true },
-            { icon: "GiSlicedBread" ,
-                title: "Slice Edit",
-                selected: () => showSectionSelector,
-                action: () => {
-                    onSectionSelected(!showSectionSelector, currentSection)
-                }
+        const toolbarFactory = new ToolbarFactory();
+        const items = toolbarFactory.SideEditorToolbar(
+            {
+                hasWheels: !wheels,
+                mode,
+                showSectionSelector,
+                currentSection,
+                sectionParams
             },
-            { icon: "AiFillLock",
-                title: "Lock section",
-                iconParams: sectionParams,
-                action: () => this.lockSection()
-            },
-            { icon: "RiDeleteBack2Line", 
-                title: "Revert section",
-                iconParams: sectionParams,
-                action: () => this.removeSection()
-            },                
-            { icon: "TiArrowForwardOutline", 
-                title: "Apply to remaining sections",
-                iconParams: sectionParams,
-                action: () => this.applyToRemaining()
-            }
-            /*,
-            { 
-                icon: "AiOutlineFunction", 
-                iconParams: sectionParams,
-                title: "Interpolate sections",
-                hidden: () => !onInterpolateSections,
-                action: () => this.interpolateSections()
-            }*/
-        ]
+            this
+        );
 
         return <Toolbar className="menu menu-top" items={items} iconParams={iconParams} />
     }
