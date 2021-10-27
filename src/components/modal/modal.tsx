@@ -43,6 +43,15 @@ export class Dialogs {
         ]
     }
 
+    static CloseButtons(close: (result: boolean) => void) {
+        return [
+            {
+                label: "Close",
+                onClick: () => close(false)
+            }
+        ]
+    }
+
     static Add(dialog: IGenericDialog) {
         Dialogs.DialogsStream.next({
             add: [dialog],

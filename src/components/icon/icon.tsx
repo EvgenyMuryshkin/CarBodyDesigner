@@ -11,6 +11,8 @@ import { TiArrowForwardOutline } from "react-icons/ti"
 import { BiChip, BiHelpCircle } from "react-icons/bi"
 import { RiDeleteBack2Line } from "react-icons/ri"
 import { FiUpload, FiDownload } from "react-icons/fi"
+import { FaUniversity } from "react-icons/fa"
+import { FcViewDetails } from "react-icons/fc"
 
 import { Tools } from "../../lib";
 import "./icon.scss";
@@ -49,7 +51,9 @@ export type iconType =
     "FiUpload" |
     "FiDownload" |
     "BiHelpCircle" |
-    "GrFavorite"
+    "GrFavorite" |
+    "FaUniversity" |
+    "FcViewDetails"
     ;
 
 export interface IIconElementProps {
@@ -139,6 +143,8 @@ export class Icon extends React.Component<IIconProps> {
             case "FiDownload": return <FiDownload {...iconProps}/>
             case "BiHelpCircle": return <BiHelpCircle {...iconProps}/>
             case "GrFavorite": return <GrFavorite {...iconProps}/>
+            case "FaUniversity": return <FaUniversity {...iconProps}/>
+            case "FcViewDetails": return <FcViewDetails {...iconProps}/>
             default: return null;
         }
     }

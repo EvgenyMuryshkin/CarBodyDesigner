@@ -22,6 +22,10 @@ export interface IStorageModel {
 export interface IDesignStore {
     replaceStorageModel(storageModel: IStorageModel): void;
     appendStorageModel(storageModel: IStorageModel): void;
+    resetAll(): void;
+    newDesing(name: string): IDesign;
+    updateDesign(design: IDesign | null, update?: (design: IDesign) => void): void;
+    deleteDesign(design: IDesign | null): void;
 }
 
 export interface IDesignStoreState {

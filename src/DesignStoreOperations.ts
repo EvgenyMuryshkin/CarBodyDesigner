@@ -4,10 +4,11 @@ import { Dialogs, Forms } from "./components";
 import { IDesignStoreState, IStorageModel } from "./DesignStore";
 import { generationParity } from "./SidePlane";
 import { mergeBufferGeometries } from "three/examples/jsm/utils/BufferGeometryUtils";
-import { FogExp2, MathUtils } from "three";
+import { MathUtils } from "three";
 import * as THREE from "three";
 import { DesignTools } from "./DesignTools";
 import axios from "axios";
+import { Tools } from "./lib/tools";
 
 export class DesignStoreOperations {
     constructor(private designStoreState: IDesignStoreState) {
@@ -65,7 +66,7 @@ export class DesignStoreOperations {
 
     async loadSampleDesigns() {
         if (!await Dialogs.Confirm("Load sample designs?")) return;
-        
+
         const { designStore } = this.designStoreState;        
         const response = await axios.get("SampleDesigns.json");
         designStore.replaceStorageModel(response.data);
@@ -122,5 +123,72 @@ export class DesignStoreOperations {
     
         fileInput.click();    
         fileInput.remove();
+    }
+
+    async resetAll() {
+        const { designStore } = this.designStoreState;        
+        if (!await Dialogs.Confirm("Reset all designs?")) return;
+        designStore.resetAll();
+    }
+
+    async newDesign() {
+        const { designStore } = this.designStoreState;        
+
+        const now = new Date();
+        const newDesign = await Forms.Modal(
+            "New Design", 
+            {
+                stringName: `${now.toLocaleDateString()} - ${now.toLocaleTimeString()}`
+            }
+        );
+    
+        if (newDesign) {
+            const design = designStore.newDesing(newDesign.stringName);
+            designStore.updateDesign(design);
+        }
+    }
+
+    async cloneDesign() {
+        const { design, designStore } = this.designStoreState;
+
+        if (!design) return;
+        const now = new Date();
+    
+        const cloneDesignParams = await Forms.Modal(
+            "Clone Design", 
+            {
+                stringName: `${design.name} - ${now.toLocaleDateString()} - ${now.toLocaleTimeString()}`
+            }
+        );
+        if (!cloneDesignParams) return;
+        const clonedDesign = Tools.clone(design);
+        clonedDesign.name = cloneDesignParams.stringName;
+        designStore.updateDesign(clonedDesign);  
+    }
+
+    async deleteDesign() {
+        const { design, designStore } = this.designStoreState;
+
+        if (!design) return;
+        if (!await Dialogs.Confirm(`Delete ${design.name}`)) return;
+    
+        designStore.deleteDesign(design);
+    }
+
+    async settings() {
+        const { design, designStore } = this.designStoreState;
+        if (!design) return;
+    
+        const settings = await Forms.Modal(design.name, {
+            stringName: design.name,
+            colorOdd: design.colorOdd,
+            colorEven: design.colorEven
+        });
+        if (!settings) return;
+        designStore.updateDesign(design, (d) => {
+            d.name = settings.stringName;
+            d.colorOdd = settings.colorOdd;
+            d.colorEven = settings.colorEven;
+        });
     }
 }

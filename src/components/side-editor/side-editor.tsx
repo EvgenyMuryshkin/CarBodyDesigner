@@ -2,9 +2,10 @@ import * as React from "react"
 import { Generate, IPoint2D } from "../../lib";
 import { DrawingCanvas, IDrawingCanvasProps } from "../drawing-canvas/drawing-canvas";
 import { drawingMode } from "../drawing-model";
-import { Icon, IconSeparator, IIconProps } from "../icon/icon";
+import { IIconProps } from "../icon/icon";
 import { Dialogs } from "../modal/modal";
-import { IToolbarItem, Toolbar } from "../toolbar/toolbar";
+import { IToolbarItem } from "../toolbar";
+import { Toolbar } from "../toolbar/toolbar";
 import { ModalSideEditor } from "./modal-side-editor";
 import "./side-editor.scss";
 
@@ -157,7 +158,7 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
         };
 
         const items: IToolbarItem[] = [
-            { icon: "BiHelpCircle", title: "Legend", action: ()=> Toolbar.Modal("Main Toolbar", items) },
+            { icon: "FcViewDetails", title: "Legend", action: ()=> Toolbar.Modal("Main Toolbar", items) },
             { icon: "AiOutlineFullscreen", title: "Fullscreen edit",  action: async () => await this.fullscreenEdit() },
             { isSeparator: true },
             { icon: "ImPencil2", title: "Draw countour", selected: () => mode === drawingMode.Contour, action: () => this.setState({ mode: drawingMode.Contour })},   
@@ -204,51 +205,6 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> {
         ]
 
         return <Toolbar className="menu menu-top" items={items} iconParams={iconParams} />
-        return (
-            <div className="menu menu-top">
-                <Icon type="AiOutlineFullscreen" title="Fullscreen edit" {...iconParams} onClick={async () => await this.fullscreenEdit()}/>
-                <IconSeparator {...iconParams}/>
-                <Icon type="ImPencil2" title="Draw countour" {...iconParams} selected={mode === drawingMode.Contour} onClick={() => this.setState({ mode: drawingMode.Contour })}/>   
-                {wheels && <Icon type="GiCartwheel" title="Draw wheel" {...iconParams} selected={mode === drawingMode.Wheel} onClick={() => this.setState({ mode: drawingMode.Wheel })}/>}
-                <IconSeparator {...iconParams}/>
-                <Icon type="ImMoveUp" title="Move Up" {...iconParams} onClick={() => this.moveUp()}/>
-                <Icon type="ImMoveDown" title="Move Down" {...iconParams} onClick={() => this.moveDown()}/>
-                <Icon type="AiOutlineBorderTop" title="All Up" {...iconParams} onClick={() => this.allUp()}/>
-                <Icon type="AiOutlineBorderBottom" title="All Down" {...iconParams} onClick={() => this.allDown()}/>
-                <Icon type="GiWhiplash" title="Smooth" {...iconParams} onClick={() => this.smooth()}/>
-                <IconSeparator {...iconParams}/>
-                <Icon type="GiSlicedBread" 
-                    title="Slice Edit" 
-                    {...iconParams} 
-                    selected={showSectionSelector} 
-                    onClick={() => {
-                        onSectionSelected(!showSectionSelector, currentSection)
-                    }}
-                />
-                <Icon 
-                    type="AiFillLock" 
-                    title="Lock section"
-                    {...sectionParams} 
-                    onClick={() => this.lockSection()} 
-                    />
-                <Icon 
-                    type="RiDeleteBack2Line" 
-                    title="Revert section"
-                    {...sectionParams} 
-                    onClick={() => this.removeSection()}
-                    />
-                <Icon 
-                    type="TiArrowForwardOutline" 
-                    title="Apply to remaining sections" 
-                    {...sectionParams} 
-                    onClick={() => this.applyToRemaining()} />
-                <Icon
-                    type="AiOutlineFunction" {...sectionParams}
-                    title="Interpolate sections"
-                    hidden={!onInterpolateSections}
-                    onClick={() => this.interpolateSections()}/>
-            </div>
-        )
     }
     
     render() {

@@ -1,17 +1,9 @@
 import React from 'react';
-import { Icon, IconSeparator, iconType, IIconProps } from '../icon/icon';
+import { Icon, IconSeparator, IIconProps } from '../icon/icon';
 import { Dialogs, IGenericDialog } from '../modal';
+import { ToolbarLegend } from './toolbar-legend';
+import { IToolbarItem } from './toolbar-types';
 import "./toolbar.scss";
-
-export interface IToolbarItem {
-    isSeparator?: boolean;
-    icon?: iconType;
-    title?: string,
-    action?: () => void;
-    selected?: () => boolean;
-    iconParams?: Partial<IIconProps>;
-    hidden?: () => boolean;
-}
 
 interface IProps {
     items: IToolbarItem[];
@@ -51,35 +43,11 @@ export class Toolbar extends React.Component<IProps> {
     }
 
     static async Modal(title: string, items: IToolbarItem[]) {
-        const menuItems = items;
         let genericDialog: IGenericDialog | null = null;
-        const rows = menuItems.map((i, idx) => {
-            if (i.isSeparator) {
-                return <tr key={idx}><td colSpan={2} className="toolbar-legend-separator"></td></tr>
-            }
-
-            return (
-                <tr key={idx}>
-                    <td className="toolbar-legend-icon"><Icon type={i.icon} selected={i.selected?.()} onClick={() => {
-                        if (genericDialog) {
-                            Dialogs.Remove(genericDialog);
-                            i.action?.();
-                        }
-                    }}/></td>
-                    <td>{i.title}</td>
-                </tr>
-            )
-        })
 
         await Dialogs.Notification(
             title,
-            (
-                <table className="toolbar-legend">
-                    <tbody>
-                        {rows}
-                    </tbody>
-                </table>
-            ),
+            <ToolbarLegend items={items} dialogFactory={() => genericDialog} />,
             { genericDialogCallback: (d) => genericDialog = d }
         );
     }
