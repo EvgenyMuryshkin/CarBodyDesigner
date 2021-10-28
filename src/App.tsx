@@ -9,6 +9,7 @@ import { sectionEditorMode, wheelDrawingType } from './components/drawing-model'
 import { MainToolbar } from './MainToolbar';
 import { BodyShape, CountourQuery } from './BodyShape';
 import { generationParity } from './SidePlane';
+import CookieConsent from 'react-cookie-consent';
 
 interface IState {
   designStore: DesignStore;
@@ -267,6 +268,7 @@ export class App extends React.Component<{}, IState> {
           {this.renderDesign()}
         </div>   
         <ModalsComponent/>
+        <CookieConsent>This website uses cookies to enhance the user experience.</CookieConsent>
       </div>
     );
   }

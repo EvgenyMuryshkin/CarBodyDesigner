@@ -49,6 +49,7 @@ export class AppScene extends React.Component<IProps, IState> {
 
     componentDidMount() {
         this.init();
+        this.subscribeForResizeEvents();
         this.updateMesh("mount");
 
         requestAnimationFrame(this.animate);
@@ -141,6 +142,7 @@ export class AppScene extends React.Component<IProps, IState> {
         //this.scene.background = new THREE.Color( 0xa0a0a0 );
         //this.scene.fog = new THREE.Fog( 0xa0a0a0, 200, 5000 );
 
+        console.log('aspect', window.innerWidth, window.innerHeight, window.innerWidth / window.innerHeight)
         this.camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
         this.camera.position.z = 1000;
         
@@ -203,21 +205,27 @@ export class AppScene extends React.Component<IProps, IState> {
         if (d && this.renderer?.domElement)
         {
             this.renderer.setSize(d.offsetWidth - 2, d.offsetHeight - 2);
+            if (this.camera) {
+                this.camera.aspect = d.offsetWidth / d.offsetHeight;
+                this.camera.updateProjectionMatrix();
+            }
+
             d.appendChild?.(this.renderer.domElement);                
         }
-/*
+    }
+
+    subscribeForResizeEvents() {
         window.addEventListener("resize", () => {
             const { renderer, camera, container } = this;
 
             if (renderer && container && camera) {
-                const newWidth = container.offsetWidth - 10;
-                const newHeight = container.offsetHeight - 10;
+                const newWidth = container.offsetWidth - 2;
+                const newHeight = container.offsetHeight - 2;
                 camera.aspect = newWidth / newHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize(newWidth, newHeight);
             }
         });
-*/
     }
 
     public render() {
