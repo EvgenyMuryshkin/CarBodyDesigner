@@ -1,0 +1,22 @@
+{
+  "files": {
+    "main.css": "/CarBodyDesigner/static/css/main.e3bf12f2.chunk.css",
+    "main.js": "/CarBodyDesigner/static/js/main.09002437.chunk.js",
+    "main.js.map": "/CarBodyDesigner/static/js/main.09002437.chunk.js.map",
+    "runtime-main.js": "/CarBodyDesigner/static/js/runtime-main.e1453808.js",
+    "runtime-main.js.map": "/CarBodyDesigner/static/js/runtime-main.e1453808.js.map",
+    "static/js/2.710a6489.chunk.js": "/CarBodyDesigner/static/js/2.710a6489.chunk.js",
+    "static/js/2.710a6489.chunk.js.map": "/CarBodyDesigner/static/js/2.710a6489.chunk.js.map",
+    "index.html": "/CarBodyDesigner/index.html",
+    "precache-manifest.2ccaf25f644dd3b346f08c603313f9aa.js": "/CarBodyDesigner/precache-manifest.2ccaf25f644dd3b346f08c603313f9aa.js",
+    "service-worker.js": "/CarBodyDesigner/service-worker.js",
+    "static/css/main.e3bf12f2.chunk.css.map": "/CarBodyDesigner/static/css/main.e3bf12f2.chunk.css.map",
+    "static/js/2.710a6489.chunk.js.LICENSE.txt": "/CarBodyDesigner/static/js/2.710a6489.chunk.js.LICENSE.txt"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.e1453808.js",
+    "static/js/2.710a6489.chunk.js",
+    "static/css/main.e3bf12f2.chunk.css",
+    "static/js/main.09002437.chunk.js"
+  ]
+}
