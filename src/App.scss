@@ -19,6 +19,10 @@ body {
   text-align: center;
   height: 100%;
   display: flex;
+
+  .app-toolbars {
+    height: 100px;
+  }
 }
 
 .App-logo {
@@ -92,15 +96,10 @@ body {
 }
 
 .main-layout {
-  width: 1600px;
-  height: 1200px;
   border-collapse: collapse;
   
   tr {
-    height: 600px;
     td {
-      width: 800px;
-      height: 600px;
       border: 1px solid gray;
       overflow: hidden;
       vertical-align: top;
@@ -108,9 +107,17 @@ body {
   }
 }
 
+.main-layout-div {
+  .main-layout-row {
+    display: flex;
+    .main-layout-cell {
+      border: 1px solid black;
+      overflow: hidden;
+    }
+  }
+}
+
 .three-container {
-  width: 100%;
-  height: 100%;
 }
 
 .side-drawing-container {

@@ -10,6 +10,7 @@ import { MainToolbar } from './MainToolbar';
 import { BodyShape, CountourQuery } from './BodyShape';
 import { generationParity } from './SidePlane';
 import CookieConsent from 'react-cookie-consent';
+import { debounce, interval, Subject } from 'rxjs';
 
 interface IState {
   designStore: DesignStore;
@@ -21,6 +22,8 @@ interface IState {
 }
 
 export class App extends React.Component<{}, IState> {
+  _updateStream: Subject<{}> = new Subject<{}>();
+
   constructor(props: any) {
     super(props);
 
@@ -41,11 +44,18 @@ export class App extends React.Component<{}, IState> {
       showSectionSelector: false,
       currentSection: 0
     }
+
+
+    this
+        ._updateStream
+        .pipe(debounce(() => interval(500)))
+        .subscribe(() => this.forceUpdate());
   }
 
   componentDidMount() {
     const { designStore } = this.state;
     designStore.subscribe(s => this.setState({ designStoreState: s }));
+    this.subscribeForResizeEvents();
 
     window.ontouchstart = function(event) {
       if (event.touches.length > 1) { //If there is more than one touch
@@ -57,6 +67,12 @@ export class App extends React.Component<{}, IState> {
       e.stopPropagation();
     })
     */
+  }
+
+  subscribeForResizeEvents() {
+    window.addEventListener("resize", () => {
+      this._updateStream.next({});
+    });
   }
 
   renderDesign() {
@@ -72,9 +88,6 @@ export class App extends React.Component<{}, IState> {
     if (!design) return null;
 
     const { boxSize, frontPoints, sidePoints, topPoints, wheels, frontSegments } = design;
-
-    const canvasWidth = 700;
-    const canvasHeight = 300;
 
     const modifyDesign = (diff: Partial<IDesign>) => {
       const modified = {
@@ -116,12 +129,31 @@ export class App extends React.Component<{}, IState> {
       })
     }
 
+    const height = window.innerHeight - 100;
+    const tableSizeProps: React.CSSProperties = {
+      width: window.innerWidth,
+      height: height
+    };
+
+    const rowSizeProps: React.CSSProperties = {
+      height: height / 2
+    };
+
+    const cellSizeProps: React.CSSProperties = {
+      width: window.innerWidth / 2,
+      height: height / 2
+    };
+
+    const canvasWidth = Math.floor(window.innerWidth / 2);
+    const canvasHeight = Math.floor(height / 2);
+
+    console.log(canvasWidth, canvasHeight);
+
     return (
-      <table className="main-layout">
-        <tbody>
-          <tr>
-            <td>
-              <SideEditor 
+      <div className="main-layout-div" style={tableSizeProps}>
+        <div className="main-layout-row" style={rowSizeProps}>
+          <div className="main-layout-cell" style={cellSizeProps}>
+          <SideEditor 
                 id="front"
                 title={`Front (${frontPoints.length}x${boxSize.z})`}
                 symmetrical={true}
@@ -160,9 +192,9 @@ export class App extends React.Component<{}, IState> {
                 design={design}
                 sectionMode={sectionEditorMode.Edit}
               />
-            </td>
-            <td>
-              <SideEditor 
+          </div>
+          <div className="main-layout-cell" style={cellSizeProps}>
+            <SideEditor 
                 id="top"
                 title={`Top (${topPoints.length}x${boxSize.y})`}
                 symmetrical={false}
@@ -188,11 +220,11 @@ export class App extends React.Component<{}, IState> {
                 design={design}
                 sectionMode={sectionEditorMode.Pick}
               />
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <SideEditor 
+          </div>
+        </div>
+        <div className="main-layout-row" style={rowSizeProps}>
+          <div className="main-layout-cell" style={cellSizeProps}>
+          <SideEditor 
                 id="side"
                 title={`Side (${sidePoints.length}x${boxSize.z})`}
                 symmetrical={false}
@@ -218,16 +250,17 @@ export class App extends React.Component<{}, IState> {
                 design={design}
                 sectionMode={sectionEditorMode.Pick}
               />
-            </td>
-            <td>
-              <AppScene 
+          </div>
+          <div className="main-layout-cell" style={cellSizeProps}>
+          <AppScene 
+                width={canvasWidth}
+                height={canvasHeight}
                 design={design}
                 renderSettings={renderSettings}
               />
-              </td>
-          </tr>
-        </tbody>
-      </table>
+          </div>
+        </div>
+      </div>
     )
   }
 
@@ -258,17 +291,19 @@ export class App extends React.Component<{}, IState> {
     return (
       <div className="App">
         <div>
-          <MainToolbar 
-            designStore={designStore} 
-            designStoreState={designStoreState} 
-            renderSettings={renderSettings} 
-            renderSettingsChanged={s => this.setState({ renderSettings: s })}
-          />
-          {this.renderDesignSelector()}
+          <div className="app-toolbars">
+            <MainToolbar 
+              designStore={designStore} 
+              designStoreState={designStoreState} 
+              renderSettings={renderSettings} 
+              renderSettingsChanged={s => this.setState({ renderSettings: s })}
+            />
+            {this.renderDesignSelector()}
+          </div>
           {this.renderDesign()}
         </div>   
         <ModalsComponent/>
-        <CookieConsent>This website uses cookies to enhance the user experience.</CookieConsent>
+        {/*<CookieConsent>This website uses cookies to enhance the user experience.</CookieConsent>*/}
       </div>
     );
   }

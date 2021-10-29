@@ -13,6 +13,8 @@ import { DesignTools } from "./DesignTools";
 // https://threejs.org/docs/#examples/en/controls/OrbitControls
 
 export interface IProps {
+    height: number;
+    width: number;
     design: IDesign;
     renderSettings: IRenderSettings;
 }
@@ -142,7 +144,6 @@ export class AppScene extends React.Component<IProps, IState> {
         //this.scene.background = new THREE.Color( 0xa0a0a0 );
         //this.scene.fog = new THREE.Fog( 0xa0a0a0, 200, 5000 );
 
-        console.log('aspect', window.innerWidth, window.innerHeight, window.innerWidth / window.innerHeight)
         this.camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
         this.camera.position.z = 1000;
         
@@ -229,9 +230,15 @@ export class AppScene extends React.Component<IProps, IState> {
     }
 
     public render() {
+        const { width, height } = this.props;
+        console.log('scene', width, height);
+        const sizeProps: React.CSSProperties = {
+            width: width,
+            height: height
+          };
         return (
-            <div className="three-container">
-                <div className="three-container" ref={(d) => this.onContainerCreated(d)} />
+            <div style={sizeProps}>
+                <div style={sizeProps} ref={(d) => this.onContainerCreated(d)} />
             </div>
         )
     }

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { Component } from "react";
 import { IDesign } from "../../DesignStore";
 import { DesignTools } from "../../DesignTools";
@@ -71,15 +71,11 @@ export class DrawingCanvas extends Component<IProps, IState> {
 
     constructor(props: IProps) {
         super(props);
-        const sectionSelectorHeight = 25;
-        const scale = Math.min(
-            Math.floor(props.width / props.contour.length),
-            Math.floor((props.height - sectionSelectorHeight) / props.maxY)
-        ) 
+
         this.state = {
-            scale: scale,
+            scale: 0,
             margin: 25,
-            sectionSelectorHeight,
+            sectionSelectorHeight: 80,
             wheelMode: wheelDrawingMode.Create,
             wheelIndex: -1
         }
@@ -91,10 +87,29 @@ export class DrawingCanvas extends Component<IProps, IState> {
 
     componentDidMount() {
         document.addEventListener("mouseup", this.onMouseUp);
+        this.updateScale();
     }
 
     componentWillUnmount() {
         document.removeEventListener("mouseup", this.onMouseUp);
+    }
+
+    updateScale() {
+        const { width, height, contour, maxY} = this.props;
+        const { sectionSelectorHeight, scale: currentScale, margin } = this.state;
+
+        const scale = Math.min(
+            Math.floor((width - 2 * margin - 20) / contour.length),
+            Math.floor((height - 2 * margin - sectionSelectorHeight) / maxY)
+        );
+
+        console.log('scale', scale);
+
+        if (currentScale != scale) {
+            this.setState({
+                scale
+            })
+        }
     }
 
     get currentSamples(): IPoint2D[] {
@@ -146,6 +161,7 @@ export class DrawingCanvas extends Component<IProps, IState> {
 
     componentDidUpdate() {
         this.drawSignal();
+        this.updateScale();
     }
 
     get width() {
@@ -622,18 +638,22 @@ export class DrawingCanvas extends Component<IProps, IState> {
     }
 
     render() {
-        const { contour, maxY } = this.props;
+        const { id, contour, maxY } = this.props;
         const { scale, margin } = this.state;
-        const width = contour.length * scale;
-        const height = maxY * scale;
+        if (!scale) return null;
+
+        const width = contour.length * scale  + 2 * margin;
+        const height = maxY * scale  + 2 * margin;
+
+        console.log(id, scale, width, height);
 
         return (
             <div>
                 <div>
                     {this.renderSectionSelector()}
                     <canvas
-                        width={width + 2 * margin}
-                        height={height + 2 * margin}
+                        width={width}
+                        height={height}
                         className="drawing-canvas"
                         onDoubleClick={e => {
                             e.stopPropagation();
