@@ -195,7 +195,9 @@ export class BodyShape {
                     const wheelHeight = Tools.pythHB(wheel.arcRadius, wheel.center.x - p.x );
 
                     const yTop = p.y * yScale * frontScale;
-                    const wheelTop = wheel.center.y + wheelHeight + 1;
+                    const topOffset = p.z == 0 || p.z == widthPoints - 1 ? 0 : 1;
+
+                    const wheelTop = wheel.center.y + wheelHeight + topOffset;
 
                     const y = Tools.betweenInclusive(p.z, this.halfWidth - wheel.offset + 1, this.halfWidth + wheel.offset - 1)
                         ? yTop
