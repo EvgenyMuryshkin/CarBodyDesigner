@@ -55,10 +55,12 @@ export class ToolbarFactory {
             { isSeparator: true },
             { icon: "GiWireframeGlobe", title: "Wireframes", selected: () => renderSettings().wireframes, action: () => renderSettingsModified({ wireframes: !renderSettings().wireframes })} ,
             { icon: "CgEditShadows", title: "Flat Shading", selected: () => renderSettings().flatShading, action: () => renderSettingsModified({ flatShading: !renderSettings().flatShading })},
+            { icon: "GiFlatPlatform", title: "Ground plane", selected: () => renderSettings().ground, action: ()=> renderSettingsModified({ ground: !renderSettings().ground })},
+            { icon: "CgSmartHomeLight", title: "Light orbiting", selected: () => renderSettings().lightOrbit, action: ()=> renderSettingsModified({ lightOrbit: !renderSettings().lightOrbit })},
             { isSeparator: true },
-            { icon: "AiOutlineGithub", title: "Github", action: () => { window.open("https://github.com")}},
-            { icon: "AiOutlineTwitter", title: "Twitter", action: () => { window.open("https://twitter.com")}},
-            { icon: "BiChip", title: "QuSoC", action: () => { window.open("https://github.com/EvgenyMuryshkin/qusoc")}},
+            { icon: "AiOutlineGithub", title: "GitHub - Project Repository", action: () => { window.open("https://github.com/EvgenyMuryshkin/CarBodyDesigner")}},
+            { icon: "AiOutlineTwitter", title: "Twitter - Evgeny Muryshkin", action: () => { window.open("https://twitter.com/ITMayWorkDev")}},
+            { icon: "BiChip", title: "QuSoC - FPGA design toolkit", action: () => { window.open("https://github.com/EvgenyMuryshkin/qusoc")}},
         ];
 
         return items;

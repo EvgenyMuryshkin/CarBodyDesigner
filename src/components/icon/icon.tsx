@@ -1,12 +1,12 @@
 import * as React from "react"
 import { IconBaseProps } from "react-icons";
-import { CgEditShadows } from "react-icons/cg";
+import { CgEditShadows, CgSmartHomeLight } from "react-icons/cg";
 import { GiWireframeGlobe, GiCartwheel } from "react-icons/gi";
 import { GrFavorite, GrPowerReset, GrClone } from "react-icons/gr";
 import { VscNewFile } from "react-icons/vsc";
 import { AiOutlineFunction, AiFillLock, AiOutlineFastForward, AiOutlineGithub, AiOutlineTwitter, AiOutlineExport, AiOutlineSetting, AiOutlineInfoCircle, AiOutlineCloseCircle, AiOutlineWarning, AiOutlineBorderTop, AiOutlineBorderBottom, AiOutlineFullscreen } from "react-icons/ai";
 import { ImMoveUp, ImMoveDown, ImPencil2 } from "react-icons/im"
-import { GiWhiplash, GiSlicedBread } from "react-icons/gi"
+import { GiWhiplash, GiSlicedBread, GiFlatPlatform } from "react-icons/gi"
 import { TiArrowForwardOutline } from "react-icons/ti"
 import { BiChip, BiHelpCircle } from "react-icons/bi"
 import { RiDeleteBack2Line } from "react-icons/ri"
@@ -53,7 +53,9 @@ export type iconType =
     "BiHelpCircle" |
     "GrFavorite" |
     "FaUniversity" |
-    "FcViewDetails"
+    "FcViewDetails" |
+    "GiFlatPlatform" |
+    "CgSmartHomeLight"
     ;
 
 export interface IIconElementProps {
@@ -145,6 +147,8 @@ export class Icon extends React.Component<IIconProps> {
             case "GrFavorite": return <GrFavorite {...iconProps}/>
             case "FaUniversity": return <FaUniversity {...iconProps}/>
             case "FcViewDetails": return <FcViewDetails {...iconProps}/>
+            case "GiFlatPlatform": return <GiFlatPlatform {...iconProps}/>
+            case "CgSmartHomeLight": return <CgSmartHomeLight {...iconProps}/>
             default: return null;
         }
     }

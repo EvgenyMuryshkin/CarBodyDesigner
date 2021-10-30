@@ -5,7 +5,6 @@ import { DrawingCanvas, IDrawingCanvasProps } from "../drawing-canvas/drawing-ca
 import { drawingMode } from "../drawing-model";
 import { IIconProps } from "../icon/icon";
 import { Dialogs } from "../modal/modal";
-import { IToolbarItem } from "../toolbar";
 import { Toolbar } from "../toolbar/toolbar";
 import { ModalSideEditor } from "./modal-side-editor";
 import "./side-editor.scss";
@@ -157,7 +156,7 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> implem
     }
 
     renderMenu() {
-        const { showSectionSelector, currentSection, wheels, onSectionSelected, onInterpolateSections } = this.props;
+        const { showSectionSelector, currentSection, wheels } = this.props;
         const { mode } = this.state;
         const iconParams: Partial<IIconProps> = {
             bordered: true

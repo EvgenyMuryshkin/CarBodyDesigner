@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React from "react";
 import { Component } from "react";
 import { IDesign } from "../../DesignStore";
 import { DesignTools } from "../../DesignTools";
@@ -105,7 +105,7 @@ export class DrawingCanvas extends Component<IProps, IState> {
 
         console.log('scale', scale);
 
-        if (currentScale != scale) {
+        if (currentScale !== scale) {
             this.setState({
                 scale
             })
@@ -520,18 +520,19 @@ export class DrawingCanvas extends Component<IProps, IState> {
 
             if (wheel) {
                 switch (wheelDrawing) {
-                    case wheelDrawingType.Side: {
+                    case wheelDrawingType.Side:
                         pt.x = Tools.withinRange(pt.x, wheel.wheelRadius, contour.length - 1 - wheel.wheelRadius); 
                         pt.y = Tools.withinRange(pt.y, 0, maxY - wheel.wheelRadius); 
-                    } break;
-                    case wheelDrawingType.Top: {
+                        break;
+                    case wheelDrawingType.Top:
                         pt.x = Tools.withinRange(pt.x, wheel.wheelRadius, contour.length - 1 - wheel.wheelRadius); 
                         pt.y = Tools.withinRange(pt.y, 0, maxY); 
-                    }
+                        break;
                 }
             }
 
             switch (wheelMode) {
+                // eslint-disable-next-line
                 case wheelDrawingMode.MoveCenter: {
                     if (wheel) {
                         this.onWheelChange({
@@ -540,6 +541,7 @@ export class DrawingCanvas extends Component<IProps, IState> {
                         }, wheelIndex);
                     }
                 } break;
+                // eslint-disable-next-line
                 case wheelDrawingMode.ChangeRadius: {
                     if (wheel) {
                         this.onWheelChange({
@@ -549,6 +551,7 @@ export class DrawingCanvas extends Component<IProps, IState> {
                         }, wheelIndex);
                     }
                 } break;
+                // eslint-disable-next-line
                 case wheelDrawingMode.ChangeOffset: {
                     if (wheel) {
                         this.onWheelChange({
@@ -557,6 +560,7 @@ export class DrawingCanvas extends Component<IProps, IState> {
                         }, wheelIndex);
                     }
                 } break;
+                // eslint-disable-next-line
                 case wheelDrawingMode.ChangeWidth: {
                     if (wheel) {
                         this.onWheelChange({
@@ -565,8 +569,10 @@ export class DrawingCanvas extends Component<IProps, IState> {
                         }, wheelIndex);
                     }
                 } break;
+                // eslint-disable-next-line
                 case wheelDrawingMode.Create: {
                     switch (wheelDrawing) {
+                        // eslint-disable-next-line
                         case wheelDrawingType.Side: {
                             if (wheel) {
                                 if (distToCenter < 2) {
@@ -583,6 +589,7 @@ export class DrawingCanvas extends Component<IProps, IState> {
                                 }
                             }
                         } break;
+                        // eslint-disable-next-line
                         case wheelDrawingType.Top: {
                             if (wheel) {
                                 if (distToOffsetHandler < 2) {

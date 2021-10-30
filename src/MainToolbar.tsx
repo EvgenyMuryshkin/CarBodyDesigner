@@ -13,10 +13,6 @@ interface IProps {
 }
 
 export class MainToolbar extends React.Component<IProps> {
-
-    constructor(props: IProps) {
-        super(props);
-    }
     
     modify(diff: Partial<IRenderSettings>) {
         const { renderSettingsChanged, renderSettings } = this.props;

@@ -32,6 +32,7 @@ export class AppScene extends React.Component<IProps, IState> {
     renderer: THREE.WebGLRenderer | null = null;
     bodyMesh: THREE.Mesh[] | null = null;
     orbitControls: OrbitControls | null = null;
+    groundControls: THREE.Object3D[] = [];
 
     container: HTMLDivElement | null = null;
 
@@ -58,7 +59,16 @@ export class AppScene extends React.Component<IProps, IState> {
         this.forceUpdate();
     }
 
-    componentDidUpdate() {
+    componentDidUpdate(prevProps: IProps) {
+        if (prevProps.renderSettings.ground !== this.props.renderSettings.ground) {
+            if (this.props.renderSettings.ground) {
+                this.scene?.add(...this.groundControls);
+            }
+            else {
+                this.scene?.remove(...this.groundControls);
+            }
+        }
+
         this._updateStream.next({});
     }
 
@@ -124,13 +134,15 @@ export class AppScene extends React.Component<IProps, IState> {
         const ground = new THREE.Mesh( new THREE.PlaneGeometry( 2000, 2000 ), new THREE.MeshPhongMaterial( { color: 0x999999, depthWrite: false } ) );
         ground.rotation.x = - Math.PI / 2;
         ground.receiveShadow = true;
-        this.scene.add( ground );
 
         const grid = new THREE.GridHelper( 2000, 20, 0x000000, 0x000000 );
         const gridMaterial = grid.material as THREE.Material;
         gridMaterial.opacity = 0.2;
         gridMaterial.transparent = true;
-        this.scene.add( grid );
+
+        this.groundControls = [ground, grid]
+
+        this.scene.add( ...this.groundControls );
     }
 
     init()
@@ -145,8 +157,9 @@ export class AppScene extends React.Component<IProps, IState> {
         //this.scene.fog = new THREE.Fog( 0xa0a0a0, 200, 5000 );
 
         this.camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
-        this.camera.position.z = 1000;
-        
+        this.camera.position.x = -300;
+        this.camera.position.z = 300;
+        this.camera.position.y = 300;
         this.renderer = new THREE.WebGLRenderer();
         this.renderer.setPixelRatio( window.devicePixelRatio );
         this.renderer.shadowMap.enabled = true;
@@ -183,16 +196,18 @@ export class AppScene extends React.Component<IProps, IState> {
     ang = 0;
     animate()
     {
+        const { renderSettings } = this.props;
         const { renderer, scene, camera, orbitControls } = this;
 
         requestAnimationFrame(this.animate);
 
-       
-        this.ang += 0.01;
-        const vec = new Vector3(500, 600, 700);
-        vec.applyAxisAngle(new Vector3(0, 1, 0), this.ang);
-
-        this.light?.position?.set(vec.x, vec.y, vec.z);
+        if (renderSettings.lightOrbit) {
+            this.ang += 0.01;
+            const vec = new Vector3(500, 600, 700);
+            vec.applyAxisAngle(new Vector3(0, 1, 0), this.ang);
+    
+            this.light?.position?.set(vec.x, vec.y, vec.z);
+        }
 
         orbitControls?.update();
 

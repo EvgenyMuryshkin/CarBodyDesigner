@@ -15,4 +15,6 @@ export interface ISectionPoints {
 export interface IRenderSettings {
     wireframes: boolean;
     flatShading: boolean;
+    ground: boolean;
+    lightOrbit: boolean;
 }

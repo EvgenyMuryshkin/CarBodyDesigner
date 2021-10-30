@@ -30,7 +30,7 @@ export interface IDesignStore {
 
 export interface IDesignStoreState {
     designStore: IDesignStore;
-    storageModel: IStorageModel;
+    storageModel: IStorageModel | null;
     design: IDesign | null;
 }
 
@@ -43,7 +43,13 @@ export class DesignStore {
             storageModel: this.defaultStorageModel(), 
             design: null
         });
+    }
 
+    get hasStoredDesigns() {
+        return localStorage.getItem("Designs") !== null;
+    }
+
+    initializeFromStorage() {
         this.updateDesign(null);
     }
 
@@ -165,7 +171,8 @@ export class DesignStore {
 
     appendStorageModel(appendStorageModel: IStorageModel) {
         const { storageModel } = this._stream.value;
-
+        if (!storageModel) return;
+        
         this.migrate(storageModel);
         storageModel.designs.push(...appendStorageModel.designs);
         this.replaceStorageModel(storageModel);

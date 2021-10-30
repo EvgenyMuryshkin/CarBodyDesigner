@@ -11,6 +11,7 @@ import { BodyShape, CountourQuery } from './BodyShape';
 import { generationParity } from './SidePlane';
 import CookieConsent from 'react-cookie-consent';
 import { debounce, interval, Subject } from 'rxjs';
+import { DesignStoreOperations } from './DesignStoreOperations';
 
 interface IState {
   designStore: DesignStore;
@@ -34,6 +35,8 @@ export class App extends React.Component<{}, IState> {
       renderSettings: {
         wireframes: false,
         flatShading: false,
+        ground: true,
+        lightOrbit: true
       },
       designStoreState: designStore.state,
       currentSectionData: {
@@ -61,6 +64,16 @@ export class App extends React.Component<{}, IState> {
       if (event.touches.length > 1) { //If there is more than one touch
           event.preventDefault();
       }
+    }
+
+    if (designStore.hasStoredDesigns) {
+      designStore.initializeFromStorage();
+    }
+    else {
+      designStore.initializeFromStorage();
+
+      const ops = new DesignStoreOperations({ designStore: designStore, design: null, storageModel: null });
+      ops.loadSampleDesigns();
     }
 /*
     window.addEventListener("touchstart", (e) => {
@@ -268,6 +281,8 @@ export class App extends React.Component<{}, IState> {
     const { designStore, designStoreState } = this.state;
     const { storageModel, design } = designStoreState;
 
+    if (!storageModel) return null;
+
     return (
       <div className="menu menu-top">
         {storageModel.designs.map(d => {
@@ -303,7 +318,7 @@ export class App extends React.Component<{}, IState> {
           {this.renderDesign()}
         </div>   
         <ModalsComponent/>
-        {/*<CookieConsent>This website uses cookies to enhance the user experience.</CookieConsent>*/}
+        <CookieConsent>This website uses cookies to enhance the user experience.</CookieConsent>
       </div>
     );
   }
