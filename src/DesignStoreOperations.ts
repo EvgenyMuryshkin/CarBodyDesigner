@@ -79,7 +79,7 @@ export class DesignStoreOperations {
         if (!await Dialogs.Confirm("Load sample designs?")) return;
 
         const { designStore } = this.designStoreState;        
-        const response = await axios.get("/SampleDesigns.json");
+        const response = await axios.get("SampleDesigns.json");
         designStore.replaceStorageModel(response.data);
     }
 
