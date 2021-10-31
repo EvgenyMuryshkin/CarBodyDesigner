@@ -259,11 +259,12 @@ export class AppScene extends React.Component<IProps, IState> {
 
     public render() {
         const { width, height } = this.props;
-        console.log('scene', width, height);
+
         const sizeProps: React.CSSProperties = {
             width: width,
             height: height
-          };
+        };
+        
         return (
             <div style={sizeProps}>
                 <div style={sizeProps} ref={(d) => this.onContainerCreated(d)} />

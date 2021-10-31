@@ -161,8 +161,6 @@ export class App extends React.Component<{}, IState> {
     const canvasWidth = Math.floor(window.innerWidth / 2);
     const canvasHeight = Math.floor(height / 2);
 
-    console.log(canvasWidth, canvasHeight);
-
     return (
       <div className="main-layout-div" style={tableSizeProps}>
         <div className="main-layout-row" style={rowSizeProps}>

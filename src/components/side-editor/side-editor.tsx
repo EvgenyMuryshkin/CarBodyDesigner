@@ -1,5 +1,4 @@
 import * as React from "react"
-import { IProps } from "../../AppScene";
 import { Generate, IPoint2D } from "../../lib";
 import { ISideEditorActions, ToolbarFactory } from "../../ToolbarFactory";
 import { DrawingCanvas, IDrawingCanvasProps } from "../drawing-canvas/drawing-canvas";

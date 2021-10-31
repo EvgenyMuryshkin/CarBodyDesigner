@@ -50,8 +50,8 @@ export class ToolbarFactory {
             { icon: "FiUpload", title: "Upload designs", action: () => dso().uploadDesigns()},
             { isSeparator: true },
             { icon: "GrClone", title: "Clone Design", action: () => dso().cloneDesign()},
-            { icon: "AiOutlineSetting", title: "Settings", action: () => dso().settings()},
-            { icon: "AiOutlineExport", title: "Export STL", action: () => dso().exportSTL()},
+            { icon: "AiOutlineSetting", title: "Design Settings", action: () => dso().settings()},
+            { icon: "AiOutlineExport", title: "Export Design to STL", action: () => dso().exportSTL()},
             { icon: "AiOutlineCloseCircle", title: "Delete Design", action: () => dso().deleteDesign()},
             { isSeparator: true },
             { icon: "GiWireframeGlobe", title: "Wireframes", selected: () => renderSettings().wireframes, action: () => renderSettingsModified({ wireframes: !renderSettings().wireframes })} ,
@@ -90,7 +90,7 @@ export class ToolbarFactory {
     }
 
     SideEditorToolbar(data: ISideEditorData, actions: ISideEditorActions | null): IToolbarItem[] {
-        const { mode, hasWheels, sectionParams, showSectionSelector, currentSection, sectionMode } = data;
+        const { mode, hasWheels, sectionParams, showSectionSelector, currentSection } = data;
 
         const items: IToolbarItem[] = [
             { icon: "FcViewDetails", title: "Legend", action: () => Toolbar.Modal("Main Toolbar", items) },

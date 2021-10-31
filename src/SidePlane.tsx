@@ -15,6 +15,11 @@ export enum generationParity {
     Even
 }
 
+export enum normalsDirection {
+    CW = 1,
+    CCW = 2
+}
+
 export interface ISidePlaneProps {
     length: number;
     width: number;
@@ -22,6 +27,7 @@ export interface ISidePlaneProps {
     mode: generationMode;
     parity: generationParity;
     log?: boolean;
+    direction: normalsDirection;
 }
 
 export type pointMapper = (p: IPoint3D, allPoints: IPoint3D[]) => IPoint3D;
@@ -51,7 +57,7 @@ export class SidePlane implements IBodyPart  {
     }
 
     constructor(props: ISidePlaneProps) {
-        const { length, width, pointsMapper } = props;
+        const { length, width, pointsMapper, direction } = props;
         const { vertices, indices, uvs } = this;
 
         this.props = props;
@@ -196,19 +202,27 @@ export class SidePlane implements IBodyPart  {
             return [];
         }
 
-        for (const l of Generate.range(0, length - 1)) {
-            for (const w of Generate.range(0, width - 1)) {
-                if (!this.parityMatch((l + w) % 2 !== 0)) continue;
+        // TODO: something is wrong with face normals.
+        // Blender does not show them on both sides when double faced is enforced.
 
-                indices.push(...facesFromIndexes(0, l, w, "front"));
+        const enforceDoubleSided = true;
+        if (enforceDoubleSided || (direction & normalsDirection.CCW) === normalsDirection.CCW) {
+            for (const l of Generate.range(0, length - 1)) {
+                for (const w of Generate.range(0, width - 1)) {
+                    if (!this.parityMatch((l + w) % 2 !== 0)) continue;
+    
+                    indices.push(...facesFromIndexes(0, l, w, "front"));
+                }
             }
         }
 
-        for (const l of Generate.range(0, length - 1)) {
-            for (const w of Generate.range(0, width - 1)) {
-                if (!this.parityMatch((l + w) % 2 !== 0)) continue;
-
-                indices.push(...facesFromIndexes(this.offset, l, w, "back"));
+        if (enforceDoubleSided || (direction & normalsDirection.CW) === normalsDirection.CW) {
+            for (const l of Generate.range(0, length - 1)) {
+                for (const w of Generate.range(0, width - 1)) {
+                    if (!this.parityMatch((l + w) % 2 !== 0)) continue;
+    
+                    indices.push(...facesFromIndexes(this.offset, l, w, "back"));
+                }
             }
         }
     }
@@ -295,6 +309,7 @@ export class SidePlane implements IBodyPart  {
         for (let idx = 0; idx < indices.length; idx += 3) {
             const v_0_1 = new Vector3().subVectors(getVector(indices[idx + 1]), getVector(indices[idx]));
             const v_0_2 = new Vector3().subVectors(getVector(indices[idx + 2]), getVector(indices[idx]));
+
             const cross1 = new Vector3().crossVectors(v_0_1, v_0_2).normalize();
             setNormalVectors(cross1, cross1, cross1);
         }

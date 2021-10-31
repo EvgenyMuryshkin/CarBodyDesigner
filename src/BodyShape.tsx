@@ -3,7 +3,7 @@ import { BaseBodyShape, IBodyPart } from "./BodyShapeTypes";
 import { IWheelModel } from "./components/drawing-model";
 import { IDesign } from "./DesignStore";
 import { Generate, IPoint2D, IPoint3D, ISectionData, ISectionPoints, Tools } from "./lib";
-import { generationMode, generationParity, SidePlane } from "./SidePlane";
+import { generationMode, generationParity, normalsDirection, SidePlane } from "./SidePlane";
 
 export class CountourQuery
 {
@@ -60,7 +60,8 @@ export class BodyShape extends BaseBodyShape {
             width: heightPoints,
             pointsMapper: (l, w) => scale([l - halfLegth, w - halfHeight, width - halfWidth]),
             mode: generationMode.LSymmetrical,
-            parity: parity
+            parity: parity,
+            direction: normalsDirection.CW
         });
 
         this.right = new SidePlane({
@@ -68,7 +69,8 @@ export class BodyShape extends BaseBodyShape {
             width: heightPoints,
             pointsMapper: (l, w) => scale([l - halfLegth, w - halfHeight, - halfWidth]),
             mode: generationMode.LSymmetrical,
-            parity: parity
+            parity: parity,
+            direction: normalsDirection.CCW
         });
 
         this.front = new SidePlane({
@@ -76,7 +78,8 @@ export class BodyShape extends BaseBodyShape {
             width: heightPoints,
             pointsMapper: (l, w) => scale([-halfLegth, w - halfHeight, l - halfWidth]),
             mode: generationMode.LSymmetrical,
-            parity: parity 
+            parity: parity,
+            direction: normalsDirection.CW
         });
 
         this.back = new SidePlane({
@@ -84,7 +87,8 @@ export class BodyShape extends BaseBodyShape {
             width: heightPoints,
             pointsMapper: (l, w) => scale([length - halfLegth, w - halfHeight, l - halfWidth]),
             mode: generationMode.LSymmetrical,
-            parity: parity 
+            parity: parity,
+            direction: normalsDirection.CCW
         });
 
         this.top = new SidePlane({
@@ -92,7 +96,8 @@ export class BodyShape extends BaseBodyShape {
             width: widthPoints,
             pointsMapper: (l, w) => scale([l - halfLegth, height - halfHeight, w - halfWidth]),
             mode: generationMode.LWSymmetrical,
-            parity: parity 
+            parity: parity,
+            direction: normalsDirection.CCW
         });    
 
         this.bottom = new SidePlane({
@@ -100,7 +105,8 @@ export class BodyShape extends BaseBodyShape {
             width: widthPoints,
             pointsMapper: (l, w) => scale([l - halfLegth, 0/*height - halfHeight*/, w - halfWidth]),
             mode: generationMode.LWSymmetrical,
-            parity: parity 
+            parity: parity,
+            direction: normalsDirection.CW
         });  
     }
 

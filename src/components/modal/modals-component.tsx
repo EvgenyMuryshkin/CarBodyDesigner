@@ -63,7 +63,7 @@ export class ModalsComponent extends React.Component<IProps, IState> {
         : null;
 
         const modals = (
-            <div className="modal" onSelect={e => console.log(e)}>
+            <div className="modal">
                 {backdrop}
                 {modalContainer}
             </div>

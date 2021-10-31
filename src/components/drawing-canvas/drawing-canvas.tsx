@@ -103,8 +103,6 @@ export class DrawingCanvas extends Component<IProps, IState> {
             Math.floor((height - 2 * margin - sectionSelectorHeight) / maxY)
         );
 
-        console.log('scale', scale);
-
         if (currentScale !== scale) {
             this.setState({
                 scale
@@ -364,7 +362,7 @@ export class DrawingCanvas extends Component<IProps, IState> {
                 if (symmetrical) {
                     if (Tools.between(halfIndex, lastPoint.x, pt.x)) {
                         // do nothing here
-                        console.log("skipped", halfIndex, lastPoint.x, pt.x);
+                        // console.log("skipped", halfIndex, lastPoint.x, pt.x);
 
                         //this.lerp(samples, lastPoint, pt);
                         //this.lerp(samples, this.reflect(pt), this.reflect(lastPoint));
@@ -645,14 +643,12 @@ export class DrawingCanvas extends Component<IProps, IState> {
     }
 
     render() {
-        const { id, contour, maxY } = this.props;
+        const { contour, maxY } = this.props;
         const { scale, margin } = this.state;
         if (!scale) return null;
 
         const width = contour.length * scale  + 2 * margin;
         const height = maxY * scale  + 2 * margin;
-
-        console.log(id, scale, width, height);
 
         return (
             <div>
