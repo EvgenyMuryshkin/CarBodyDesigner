@@ -16,7 +16,7 @@
     "react-icons": "4.2.0",
     "react-resize-detector": "5.0.6",
     "react-scripts": "3.4.1",
-    "replace-in-file": "^6.3.2",
+    "replace-in-file": "6.3.2",
     "rxjs": "7.3.0",
     "three": "0.132.2"
   },
