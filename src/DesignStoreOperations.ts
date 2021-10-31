@@ -9,9 +9,11 @@ import * as THREE from "three";
 import { DesignTools } from "./DesignTools";
 import axios from "axios";
 import { Tools } from "./lib/tools";
+import { Wheels } from "./Wheels";
+import { IRenderSettings } from "./lib";
 
 export class DesignStoreOperations {
-    constructor(private designStoreState: IDesignStoreState) {
+    constructor(private designStoreState: IDesignStoreState, private renderSettings: IRenderSettings) {
 
     }
 
@@ -33,6 +35,7 @@ export class DesignStoreOperations {
     }
 
     async exportSTL() {
+        const { renderWheels } = this.renderSettings;
         const { design } = this.designStoreState;
         if (!design) return;
 
@@ -51,7 +54,15 @@ export class DesignStoreOperations {
         const designTools = new DesignTools(design);
         const interpolatedSegments = designTools.interpolateSections();
         bodyShape.applyContour(sidePoints, frontPoints, topPoints, wheels, interpolatedSegments );
-        const singleGeometry = mergeBufferGeometries(bodyShape.geometry);
+
+        const finalGeometry = bodyShape.geometry;
+
+        if (renderWheels) {
+            const wheelsBuilder = new Wheels(boxSize.x, boxSize.y, boxSize.z);
+            finalGeometry.push(...wheelsBuilder.geometry(wheels));
+        }
+
+        const singleGeometry = mergeBufferGeometries(finalGeometry);
         
         singleGeometry.rotateX(MathUtils.degToRad(params.intXRotationDeg));
         singleGeometry.rotateY(MathUtils.degToRad(params.intYRotationDeg));
@@ -182,13 +193,15 @@ export class DesignStoreOperations {
         const settings = await Forms.Modal(design.name, {
             stringName: design.name,
             colorOdd: design.colorOdd,
-            colorEven: design.colorEven
+            colorEven: design.colorEven,
+            colorWheels: design.colorWheels
         });
         if (!settings) return;
         designStore.updateDesign(design, (d) => {
             d.name = settings.stringName;
             d.colorOdd = settings.colorOdd;
             d.colorEven = settings.colorEven;
+            d.colorWheels = settings.colorWheels;
         });
     }
 }

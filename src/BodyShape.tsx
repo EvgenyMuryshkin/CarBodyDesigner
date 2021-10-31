@@ -1,4 +1,5 @@
 import { BufferGeometry } from "three";
+import { BaseBodyShape, IBodyPart } from "./BodyShapeTypes";
 import { IWheelModel } from "./components/drawing-model";
 import { IDesign } from "./DesignStore";
 import { Generate, IPoint2D, IPoint3D, ISectionData, ISectionPoints, Tools } from "./lib";
@@ -19,7 +20,7 @@ export class CountourQuery
     }
 }
 
-export class BodyShape {
+export class BodyShape extends BaseBodyShape {
     private left: SidePlane;
     private right: SidePlane;
     private front: SidePlane;
@@ -27,21 +28,13 @@ export class BodyShape {
     private top: SidePlane;
     private bottom: SidePlane;
 
-    get halfLegth() {
-        return (this.lengthPoints - 1) / 2;
-    }
-    get halfWidth() {
-        return (this.widthPoints - 1) / 2;
-    }
-    get halfHeight() {
-        return (this.heightPoints - 1) / 2;
-    }
-
     constructor(
-        private lengthPoints: number, 
-        private widthPoints: number, 
-        private heightPoints: number,
+        lengthPoints: number, 
+        widthPoints: number, 
+        heightPoints: number,
         parity: generationParity) {
+
+        super(lengthPoints, widthPoints, heightPoints);
 
         const length = lengthPoints - 1;
         const width = widthPoints - 1;
@@ -336,13 +329,15 @@ export class BodyShape {
 
     public get geometry(): BufferGeometry[] {
         const { left, right, front, back, top, bottom } = this;
-        return [
+      
+        const parts: IBodyPart[] = [
             left,
             right,
             front, 
             back, 
             top,
             bottom
-        ].map(p => p.geometry(5));
-    }   
+        ]
+        return parts.map(p => p.geometry(5));
+    }
 }

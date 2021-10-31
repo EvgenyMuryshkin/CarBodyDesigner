@@ -36,7 +36,8 @@ export class App extends React.Component<{}, IState> {
         wireframes: false,
         flatShading: false,
         ground: true,
-        lightOrbit: true
+        lightOrbit: true,
+        renderWheels: true
       },
       designStoreState: designStore.state,
       currentSectionData: {
@@ -56,7 +57,7 @@ export class App extends React.Component<{}, IState> {
   }
 
   componentDidMount() {
-    const { designStore } = this.state;
+    const { designStore, renderSettings } = this.state;
     designStore.subscribe(s => this.setState({ designStoreState: s }));
     this.subscribeForResizeEvents();
 
@@ -72,7 +73,7 @@ export class App extends React.Component<{}, IState> {
     else {
       designStore.initializeFromStorage();
 
-      const ops = new DesignStoreOperations({ designStore: designStore, design: null, storageModel: null });
+      const ops = new DesignStoreOperations({ designStore: designStore, design: null, storageModel: null }, renderSettings);
       ops.loadSampleDesigns();
     }
 /*

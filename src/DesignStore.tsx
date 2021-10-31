@@ -10,6 +10,7 @@ export interface IDesign {
     topPoints: IPoint2D[];
     colorOdd: number;
     colorEven: number;
+    colorWheels: number;
     wheels: IWheelModel[];
     frontSegments: IPoint2D[][];
 }
@@ -74,6 +75,9 @@ export class DesignStore {
             });
 
             if (!d.frontSegments) d.frontSegments = [];
+
+            if (d.colorWheels === undefined)
+                d.colorWheels = 0x202020;
         });
     }
 
@@ -153,6 +157,7 @@ export class DesignStore {
             topPoints,
             colorOdd: 0xEB7D09,
             colorEven: 0x000000,
+            colorWheels: 0x202020,
             wheels: [],
             frontSegments: []
         }
@@ -172,7 +177,7 @@ export class DesignStore {
     appendStorageModel(appendStorageModel: IStorageModel) {
         const { storageModel } = this._stream.value;
         if (!storageModel) return;
-        
+
         this.migrate(storageModel);
         storageModel.designs.push(...appendStorageModel.designs);
         this.replaceStorageModel(storageModel);

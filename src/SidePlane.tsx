@@ -1,4 +1,5 @@
 import { Float32BufferAttribute, BufferGeometry, Vector3 } from "three";
+import { IBodyPart } from "./BodyShapeTypes";
 import { Generate, IPoint3D } from "./lib";
 
 export enum generationMode {
@@ -30,7 +31,7 @@ export interface IVerticeData {
     handlers: pointMapper[];
 }
 
-export class SidePlane {
+export class SidePlane implements IBodyPart  {
     props: ISidePlaneProps;
     vertices: IVerticeData[] = [];
     indices: number[] = [];

@@ -8,6 +8,7 @@ import { generationParity } from "./SidePlane";
 import { Subject, debounce, Subscription, interval } from "rxjs";
 import { IDesign } from "./DesignStore";
 import { DesignTools } from "./DesignTools";
+import { Wheels } from "./Wheels";
 // https://dustinpfister.github.io/2018/04/13/threejs-orbit-controls/
 // https://stackoverflow.com/questions/2368784/draw-on-html5-canvas-using-a-mouse
 // https://threejs.org/docs/#examples/en/controls/OrbitControls
@@ -97,10 +98,11 @@ export class AppScene extends React.Component<IProps, IState> {
             topPoints, 
             colorOdd, 
             colorEven, 
+            colorWheels,
             wheels 
         } = design;
 
-        const { flatShading, wireframes } = renderSettings;
+        const { flatShading, wireframes, renderWheels } = renderSettings;
         const wireframesColor = 0x00FF00;
         
         const parts = [
@@ -123,6 +125,17 @@ export class AppScene extends React.Component<IProps, IState> {
                 flatShading: flatShading 
             });
             this.bodyMesh.push(...body.geometry.map(m => new THREE.Mesh( m, material )));
+        }
+
+        if (renderWheels) {
+            const wheelsMaterial = new THREE.MeshPhongMaterial({ 
+                color: wireframes ? wireframesColor : colorWheels, 
+                wireframe: wireframes, 
+                flatShading: flatShading 
+            });
+    
+            const wheelsBuilder = new Wheels(boxSize.x, boxSize.y, boxSize.z);
+            this.bodyMesh.push(...wheelsBuilder.geometry(wheels).map(g => new THREE.Mesh(g, wheelsMaterial )));
         }
 
         this.bodyMesh.forEach(m => scene.add( m ));

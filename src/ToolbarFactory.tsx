@@ -1,12 +1,13 @@
 import React from "react"
 import { Dialogs, IIconProps, Toolbar } from "./components"
-import { drawingMode } from "./components/drawing-model";
+import { drawingMode, sectionEditorMode } from "./components/drawing-model";
 import { IToolbarItem } from "./components/toolbar";
 import { DesignStoreOperations } from "./DesignStoreOperations"
 import { IRenderSettings } from "./lib";
 import { Tutorial } from "./tutorial"
 
 export interface ISideEditorData {
+    sectionMode: sectionEditorMode;
     mode: drawingMode;
     showSectionSelector: boolean;
     hasWheels: boolean;
@@ -47,16 +48,17 @@ export class ToolbarFactory {
             { icon: "VscNewFile", title: "New Design", action: () => dso().newDesign()},
             { icon: "FiDownload", title: "Download designs" , action: () => dso().downloadDesigns()},
             { icon: "FiUpload", title: "Upload designs", action: () => dso().uploadDesigns()},
-            { icon: "AiOutlineExport", title: "Export STL", action: () => dso().exportSTL()},
             { isSeparator: true },
             { icon: "GrClone", title: "Clone Design", action: () => dso().cloneDesign()},
             { icon: "AiOutlineSetting", title: "Settings", action: () => dso().settings()},
+            { icon: "AiOutlineExport", title: "Export STL", action: () => dso().exportSTL()},
             { icon: "AiOutlineCloseCircle", title: "Delete Design", action: () => dso().deleteDesign()},
             { isSeparator: true },
             { icon: "GiWireframeGlobe", title: "Wireframes", selected: () => renderSettings().wireframes, action: () => renderSettingsModified({ wireframes: !renderSettings().wireframes })} ,
             { icon: "CgEditShadows", title: "Flat Shading", selected: () => renderSettings().flatShading, action: () => renderSettingsModified({ flatShading: !renderSettings().flatShading })},
             { icon: "GiFlatPlatform", title: "Ground plane", selected: () => renderSettings().ground, action: ()=> renderSettingsModified({ ground: !renderSettings().ground })},
             { icon: "CgSmartHomeLight", title: "Light orbiting", selected: () => renderSettings().lightOrbit, action: ()=> renderSettingsModified({ lightOrbit: !renderSettings().lightOrbit })},
+            { icon: "GiCartwheel", title: "Render Wheels", selected: () => renderSettings().renderWheels, action: ()=> renderSettingsModified({ renderWheels: !renderSettings().renderWheels })},
             { isSeparator: true },
             { icon: "AiOutlineGithub", title: "GitHub - Project Repository", action: () => { window.open("https://github.com/EvgenyMuryshkin/CarBodyDesigner")}},
             { icon: "AiOutlineTwitter", title: "Twitter - Evgeny Muryshkin", action: () => { window.open("https://twitter.com/ITMayWorkDev")}},
@@ -69,6 +71,7 @@ export class ToolbarFactory {
     async tutorials(mainToolbarItems: IToolbarItem[]) {
         const sideEditorToolbar = this.SideEditorToolbar(
             {
+                sectionMode: sectionEditorMode.Edit,
                 mode: drawingMode.Contour,
                 showSectionSelector: false,
                 hasWheels: false,
@@ -87,16 +90,21 @@ export class ToolbarFactory {
     }
 
     SideEditorToolbar(data: ISideEditorData, actions: ISideEditorActions | null): IToolbarItem[] {
-        const { mode, hasWheels, sectionParams, showSectionSelector, currentSection } = data;
+        const { mode, hasWheels, sectionParams, showSectionSelector, currentSection, sectionMode } = data;
 
         const items: IToolbarItem[] = [
             { icon: "FcViewDetails", title: "Legend", action: () => Toolbar.Modal("Main Toolbar", items) },
             { icon: "AiOutlineFullscreen", title: "Fullscreen edit",  action: async () => await actions?.fullscreenEdit() },
             { isSeparator: true },
-            { icon: "ImPencil2", title: "Draw countour", selected: () => mode === drawingMode.Contour, action: () => actions?.setDrawingMode(drawingMode.Contour)},   
+            { icon: "ImPencil2", title: "Draw countour", selected: () => mode === drawingMode.Contour, 
+                action: () => actions?.setDrawingMode(drawingMode.Contour)
+            },   
             { icon: "GiCartwheel", title:"Draw wheel", selected: () => mode === drawingMode.Wheel, 
                 hidden: () => !hasWheels,
-                action: () => actions?.setDrawingMode(drawingMode.Wheel)
+                action: () => actions?.setDrawingMode(drawingMode.Wheel),
+                iconParams: {
+                    readOnly: showSectionSelector
+                },
             },
             { isSeparator: true },
             { icon: "ImMoveUp", title: "Move Up", action: () => actions?.moveUp()},

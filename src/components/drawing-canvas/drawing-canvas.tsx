@@ -509,7 +509,7 @@ export class DrawingCanvas extends Component<IProps, IState> {
 
         const { wheel, wheelIndex, distToCenter, distToRadiusHandler, distToOffsetHandler, distToWidthHandler } = wheelData;
 
-        if (mode === drawingMode.Contour && !wheel) {
+        if (mode === drawingMode.Contour/* && !wheel*/) {
             this.buffer?.next(pt);
             return;
         }

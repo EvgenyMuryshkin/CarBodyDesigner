@@ -1,8 +1,9 @@
 import * as React from "react"
+import { IProps } from "../../AppScene";
 import { Generate, IPoint2D } from "../../lib";
 import { ISideEditorActions, ToolbarFactory } from "../../ToolbarFactory";
 import { DrawingCanvas, IDrawingCanvasProps } from "../drawing-canvas/drawing-canvas";
-import { drawingMode } from "../drawing-model";
+import { drawingMode, sectionEditorMode } from "../drawing-model";
 import { IIconProps } from "../icon/icon";
 import { Dialogs } from "../modal/modal";
 import { Toolbar } from "../toolbar/toolbar";
@@ -49,6 +50,13 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> implem
         else {
             onCountourChange(newData, wheels);
         }
+    }
+
+    componentDidUpdate(prevProps: ISideEditorProps) {
+        if (this.props.showSectionSelector && this.state.mode !== drawingMode.Contour)
+            this.setState({
+                mode: drawingMode.Contour
+            }) 
     }
 
     moveUp() {
@@ -156,16 +164,18 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> implem
     }
 
     renderMenu() {
-        const { showSectionSelector, currentSection, wheels } = this.props;
+        const { showSectionSelector, currentSection, wheels, sectionMode } = this.props;
         const { mode } = this.state;
         const iconParams: Partial<IIconProps> = {
             bordered: true
         }
 
+        const canEditSection = sectionMode === sectionEditorMode.Edit;
+
         const sectionParams: Partial<IIconProps> = {
             ...iconParams,
-            readOnly: !showSectionSelector,
-            readOnlyTitle: "Turn on section editor"
+            readOnly: !showSectionSelector || !canEditSection,
+            readOnlyTitle: (!showSectionSelector && "Turn on section editor") || (!canEditSection && "Use front view to edit sections") || ""
         };
 
         const toolbarFactory = new ToolbarFactory();
@@ -173,6 +183,7 @@ export class SideEditor extends React.Component<ISideEditorProps, IState> implem
             {
                 hasWheels: !wheels,
                 mode,
+                sectionMode,
                 showSectionSelector,
                 currentSection,
                 sectionParams

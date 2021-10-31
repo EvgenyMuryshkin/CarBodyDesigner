@@ -32,8 +32,8 @@ export class MainToolbar extends React.Component<IProps> {
     }
 
     get dso() {
-        const { designStoreState } = this.props;
-        return new DesignStoreOperations(designStoreState);
+        const { designStoreState, renderSettings } = this.props;
+        return new DesignStoreOperations(designStoreState, renderSettings);
     }
 
     render() {

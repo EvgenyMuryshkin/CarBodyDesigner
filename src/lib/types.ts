@@ -17,4 +17,5 @@ export interface IRenderSettings {
     flatShading: boolean;
     ground: boolean;
     lightOrbit: boolean;
+    renderWheels: boolean;
 }
