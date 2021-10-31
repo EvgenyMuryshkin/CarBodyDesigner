@@ -2,6 +2,7 @@
   "name": "carbodydesigner",
   "version": "0.1.0",
   "private": false,
+  "license": "MIT",
   "homepage": "",
   "dependencies": {
     "@testing-library/jest-dom": "4.2.4",
