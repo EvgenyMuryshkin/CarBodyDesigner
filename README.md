@@ -5,6 +5,11 @@
 
 ![](https://raw.githubusercontent.com/EvgenyMuryshkin/CarBodyDesigner/main/public/img/overview.png)
 
+YouTube Tutorial
+
+[![Tutorial](https://img.youtube.com/vi/JSN41whg0-Q/0.jpg)](https://www.youtube.com/watch?v=JSN41whg0-Q)
+
+
 ## Sample designs
 
 ### Sport
