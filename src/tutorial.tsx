@@ -9,7 +9,7 @@ interface IProps {
 
 export class Tutorial extends React.Component<IProps> {
     section(title: string, content: JSX.Element | null, image: string | null = null, video: string | null = null) {
-        // style="width: 560px; height: 315px; float: none; clear: both; margin: 2px auto;"
+
         return (
             <div className="tutorial-section">
                 <header>{title}</header>
@@ -17,7 +17,9 @@ export class Tutorial extends React.Component<IProps> {
                 {image && <img alt="meaningful text" src={`tutorial/${image}.gif`} />}
                 {video && 
                 <div style={{ margin: 20 }}>
-                    <div><a style={{ textDecoration: "none" }} href={`https://youtu.be/${video}`} target="_blank">See on YouTube</a></div>
+                    <div>
+                        <a style={{ textDecoration: "none" }} href={`https://youtu.be/${video}`} target="_blank" rel="noopener noreferrer">See on YouTube</a>
+                    </div>
                     <embed
                         src={`https://www.youtube.com/embed/${video}`}
                         type="video/mp4"
