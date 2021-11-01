@@ -1,10 +1,10 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "7c45aec0f08bdf587315ce4698f9f20b",
+    "revision": "313e433fc8e54b3fd83bca4a2ea093ab",
     "url": "/CarBodyDesigner/index.html"
   },
   {
-    "revision": "73f279ac0b126f80f816",
+    "revision": "66d9969dcf2746103a31",
     "url": "/CarBodyDesigner/static/css/main.c7caf25a.chunk.css"
   },
   {
@@ -16,8 +16,8 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/CarBodyDesigner/static/js/2.6a40536b.chunk.js.LICENSE.txt"
   },
   {
-    "revision": "73f279ac0b126f80f816",
-    "url": "/CarBodyDesigner/static/js/main.c6221ac4.chunk.js"
+    "revision": "66d9969dcf2746103a31",
+    "url": "/CarBodyDesigner/static/js/main.b747ea65.chunk.js"
   },
   {
     "revision": "42a6294e357bc1cca460",

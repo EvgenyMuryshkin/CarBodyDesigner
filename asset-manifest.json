@@ -1,14 +1,14 @@
 {
   "files": {
     "main.css": "/CarBodyDesigner/static/css/main.c7caf25a.chunk.css",
-    "main.js": "/CarBodyDesigner/static/js/main.c6221ac4.chunk.js",
-    "main.js.map": "/CarBodyDesigner/static/js/main.c6221ac4.chunk.js.map",
+    "main.js": "/CarBodyDesigner/static/js/main.b747ea65.chunk.js",
+    "main.js.map": "/CarBodyDesigner/static/js/main.b747ea65.chunk.js.map",
     "runtime-main.js": "/CarBodyDesigner/static/js/runtime-main.2ed77bd4.js",
     "runtime-main.js.map": "/CarBodyDesigner/static/js/runtime-main.2ed77bd4.js.map",
     "static/js/2.6a40536b.chunk.js": "/CarBodyDesigner/static/js/2.6a40536b.chunk.js",
     "static/js/2.6a40536b.chunk.js.map": "/CarBodyDesigner/static/js/2.6a40536b.chunk.js.map",
     "index.html": "/CarBodyDesigner/index.html",
-    "precache-manifest.a0ac94fa51d87308012104541d9fa35d.js": "/CarBodyDesigner/precache-manifest.a0ac94fa51d87308012104541d9fa35d.js",
+    "precache-manifest.010d1053444a175a1525e44fc8ff41b0.js": "/CarBodyDesigner/precache-manifest.010d1053444a175a1525e44fc8ff41b0.js",
     "service-worker.js": "/CarBodyDesigner/service-worker.js",
     "static/css/main.c7caf25a.chunk.css.map": "/CarBodyDesigner/static/css/main.c7caf25a.chunk.css.map",
     "static/js/2.6a40536b.chunk.js.LICENSE.txt": "/CarBodyDesigner/static/js/2.6a40536b.chunk.js.LICENSE.txt"
@@ -17,6 +17,6 @@
     "static/js/runtime-main.2ed77bd4.js",
     "static/js/2.6a40536b.chunk.js",
     "static/css/main.c7caf25a.chunk.css",
-    "static/js/main.c6221ac4.chunk.js"
+    "static/js/main.b747ea65.chunk.js"
   ]
 }
